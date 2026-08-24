@@ -25,4 +25,17 @@ export const api = {
     }).then(json),
   job: (id) => fetch(`${BASE}/jobs/${id}`).then(json),
   jobs: () => fetch(`${BASE}/jobs`).then(json),
+
+  // Slice 1 — ingestion PDF + clarification
+  ingest: (file) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return fetch(`${BASE}/ingest`, { method: "POST", body: fd }).then(json);
+  },
+  brief: (document_id, answers) =>
+    fetch(`${BASE}/brief`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ document_id, answers }),
+    }).then(json),
 };

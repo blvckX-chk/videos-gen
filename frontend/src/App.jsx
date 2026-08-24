@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "./lib/api.js";
 import PromptForm from "./components/PromptForm.jsx";
 import JobCard from "./components/JobCard.jsx";
+import IngestFlow from "./components/IngestFlow.jsx";
 
 export default function App() {
   const [providers, setProviders] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [error, setError] = useState(null);
+  const [tab, setTab] = useState("pdf");
   const pollers = useRef({});
 
   useEffect(() => {
@@ -55,22 +57,36 @@ export default function App() {
         </p>
       </header>
 
+      <nav className="tabs">
+        <button className={tab === "pdf" ? "tab active" : "tab"} onClick={() => setTab("pdf")}>
+          Depuis un PDF
+        </button>
+        <button className={tab === "prompt" ? "tab active" : "tab"} onClick={() => setTab("prompt")}>
+          Depuis un prompt (b-roll)
+        </button>
+      </nav>
+
       {error && <div className="banner error">{error}</div>}
 
-      <PromptForm providers={providers} onGenerate={handleGenerate} />
+      {tab === "pdf" && <IngestFlow />}
 
-      <section className="gallery">
-        <h2>Générations {jobs.length > 0 && <span className="count">{jobs.length}</span>}</h2>
-        {jobs.length === 0 ? (
-          <p className="empty">Aucune génération pour l'instant. Lance ton premier prompt ci-dessus.</p>
-        ) : (
-          <div className="grid">
-            {jobs.map((job) => (
-              <JobCard key={job.id} job={job} />
-            ))}
-          </div>
-        )}
-      </section>
+      {tab === "prompt" && (
+        <>
+          <PromptForm providers={providers} onGenerate={handleGenerate} />
+          <section className="gallery">
+            <h2>Générations {jobs.length > 0 && <span className="count">{jobs.length}</span>}</h2>
+            {jobs.length === 0 ? (
+              <p className="empty">Aucune génération pour l'instant. Lance ton premier prompt ci-dessus.</p>
+            ) : (
+              <div className="grid">
+                {jobs.map((job) => (
+                  <JobCard key={job.id} job={job} />
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      )}
 
       <footer className="footer">
         Astuce : sans clé API, utilise le provider <strong>Démo</strong> pour tester la

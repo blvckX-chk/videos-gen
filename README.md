@@ -23,7 +23,13 @@ videos-gen/
 │       ├── main.py           # app + CORS + routes
 │       ├── config.py         # config via .env
 │       ├── models.py         # schémas (Job, GenerateRequest…)
-│       ├── providers/        # 🔌 un fichier = un moteur vidéo
+│       ├── ingestion/        # 📥 PDF → Document structuré (Slice 1)
+│       │   ├── base.py       #    contrat Extractor
+│       │   ├── registry.py   #    choix de l'extracteur (PyMuPDF, +Docling/BD)
+│       │   ├── pymupdf_extractor.py
+│       │   ├── detect.py     #    détection de type (report/slides/sci/comic)
+│       │   └── schema.py     #    Document, DocumentPage, DocType
+│       ├── providers/        # 🔌 un fichier = un moteur vidéo (b-roll IA)
 │       │   ├── base.py       #    contrat commun (VideoProvider)
 │       │   ├── registry.py   #    liste des providers actifs
 │       │   ├── demo.py       #    gratuit, sans clé (pour tester)
@@ -31,8 +37,10 @@ videos-gen/
 │       │   └── replicate.py  #    Wan, LTX, Hunyuan (crédits gratuits)
 │       ├── services/
 │       │   ├── prompt_enhancer.py  # prompt simple → prompt cinéma
+│       │   ├── clarification.py    # Document → questions → Brief (Slice 1)
+│       │   ├── documents.py        # store des documents ingérés
 │       │   └── jobs.py             # file de jobs + exécution async
-│       └── routers/api.py    # /api/generate, /api/jobs, /api/providers…
+│       └── routers/          # api.py (génération) + ingest.py (Slice 1)
 └── frontend/                 # UI React + Vite
     └── src/
         ├── App.jsx
@@ -54,6 +62,46 @@ prompt utilisateur
       ▼
     job "succeeded"  →  affichée dans la galerie
 ```
+
+## 🧩 Slice 1 — Ingestion PDF + Clarification (implémenté)
+
+Première brique du pipeline **document → vidéo**. Le système prend un **PDF**
+(rapport, présentation, article scientifique, ou **BD/manga**), détecte son
+type, et pose des questions **adaptatives** pour cadrer la vidéo avec le
+soumissionnaire. La sortie est un objet **`Brief`** : le contrat qui pilotera
+le storyboard et le rendu (Slice 2).
+
+```
+PDF ──▶ Extracteur ──▶ Détection type ──▶ Questions adaptatives ──▶ Brief
+        (PyMuPDF)       (report/slides/       (LLM ou règle-based)   (JSON typé)
+                         scientific/comic)
+```
+
+- **Ingestion** : `backend/app/ingestion/` — extracteurs branchables
+  (`Extractor` + registry). PyMuPDF par défaut ; Docling / extracteur BD à
+  ajouter sans toucher au reste.
+- **Détection de type** : heuristiques explicables (`detect.py`) — densité de
+  texte, couverture d'images, orientation, lexique scientifique. Les **BD**
+  sont repérées par leurs planches image-heavy à faible texte.
+- **Clarification** : `services/clarification.py` — questions communes +
+  questions **spécifiques au type**. Pour une BD : style d'animation (motion
+  comic), voix par personnage, bruitages. Mode LLM (Claude/OpenAI) si clé,
+  sinon fallback gratuit.
+
+### Endpoints
+| Méthode | Route | Rôle |
+|--------|-------|------|
+| POST | `/api/ingest` | Upload PDF → `Document` + questions de clarification |
+| GET | `/api/documents/{id}` | Détail d'un document ingéré |
+| POST | `/api/brief` | `document_id` + réponses → `Brief` |
+
+### 💥 Support des BD / mangas
+Oui, le système gère les bandes dessinées. L'ingestion **détecte** les planches
+(pages très couvertes par des images, peu de texte → type `comic`) et la
+clarification bascule sur des questions « motion comic ». La **détection fine
+des cases et des bulles** (segmentation + OCR) est un extracteur dédié prévu
+juste après — l'architecture est déjà prête à l'accueillir dans
+`ingestion/registry.py`.
 
 ## 🚀 Démarrage rapide
 
