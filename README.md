@@ -27,8 +27,9 @@ videos-gen/
 │       │   ├── base.py       #    contrat Extractor
 │       │   ├── registry.py   #    choix de l'extracteur (PyMuPDF, +Docling/BD)
 │       │   ├── pymupdf_extractor.py
+│       │   ├── panels.py     #    segmentation des cases de BD (XY-cut OpenCV)
 │       │   ├── detect.py     #    détection de type (report/slides/sci/comic)
-│       │   └── schema.py     #    Document, DocumentPage, DocType
+│       │   └── schema.py     #    Document, DocumentPage, DocType, Panel
 │       ├── providers/        # 🔌 un fichier = un moteur vidéo (b-roll IA)
 │       │   ├── base.py       #    contrat commun (VideoProvider)
 │       │   ├── registry.py   #    liste des providers actifs
@@ -94,14 +95,24 @@ PDF ──▶ Extracteur ──▶ Détection type ──▶ Questions adaptativ
 | POST | `/api/ingest` | Upload PDF → `Document` + questions de clarification |
 | GET | `/api/documents/{id}` | Détail d'un document ingéré |
 | POST | `/api/brief` | `document_id` + réponses → `Brief` |
+| POST | `/api/documents/{id}/panels` | Segmente les cases d'une BD (`direction=ltr\|rtl`) |
 
 ### 💥 Support des BD / mangas
-Oui, le système gère les bandes dessinées. L'ingestion **détecte** les planches
-(pages très couvertes par des images, peu de texte → type `comic`) et la
-clarification bascule sur des questions « motion comic ». La **détection fine
-des cases et des bulles** (segmentation + OCR) est un extracteur dédié prévu
-juste après — l'architecture est déjà prête à l'accueillir dans
-`ingestion/registry.py`.
+Le système gère les bandes dessinées de bout en bout pour le Slice 1 :
+
+1. **Détection** : les planches (pages très couvertes par des images, peu de
+   texte) sont classées `comic`, et la clarification bascule sur des questions
+   « motion comic » (style d'animation, voix par personnage, bruitages).
+2. **Segmentation des cases** (`ingestion/panels.py`) : détection des cases par
+   **XY-cut récursif sur les gouttières** (vision classique, OpenCV — léger,
+   offline, sans GPU ni modèle). Calcule le **bounding box normalisé** de chaque
+   case et l'**ordre de lecture** — `ltr` (BD occidentale) ou `rtl` (manga).
+   Endpoint : `POST /api/documents/{id}/panels?direction=ltr|rtl`.
+   L'UI superpose les cases numérotées sur chaque planche.
+
+Prochaine amélioration BD : **détection + OCR des bulles** et modèle
+state-of-the-art (Magi / DASS) branché via la même interface — utile pour des
+mangas à cases sans bordure que le XY-cut segmente « au mieux ».
 
 ## 🚀 Démarrage rapide
 

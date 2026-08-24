@@ -38,4 +38,9 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ document_id, answers }),
     }).then(json),
+  panels: (document_id, direction = "ltr", maxPages = 12) =>
+    fetch(
+      `${BASE}/documents/${document_id}/panels?direction=${direction}&max_pages=${maxPages}`,
+      { method: "POST" }
+    ).then(json),
 };

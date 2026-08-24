@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { api } from "../lib/api.js";
+import PanelViewer from "./PanelViewer.jsx";
 
 const TYPE_LABELS = {
   report: "Rapport",
@@ -105,6 +106,17 @@ export default function IngestFlow() {
           </ul>
           {doc.title_guess && <p className="doc-title">« {doc.title_guess} »</p>}
         </div>
+      )}
+
+      {doc && (
+        <details className="panels-wrap" open={doc.doc_type === "comic"}>
+          <summary>
+            {doc.doc_type === "comic"
+              ? "💥 BD détectée — segmenter les cases"
+              : "C'est une BD ? Détecter les cases"}
+          </summary>
+          <PanelViewer documentId={doc.id} />
+        </details>
       )}
 
       {questions.length > 0 && !brief && (

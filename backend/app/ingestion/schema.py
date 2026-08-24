@@ -32,6 +32,27 @@ class DocumentPage(BaseModel):
     looks_like_comic_page: bool = False
 
 
+class Panel(BaseModel):
+    """Une case de BD, en coordonnées normalisées (0..1) relatives à la page."""
+    index: int              # ordre de lecture dans la page
+    x: float
+    y: float
+    w: float
+    h: float
+    area_ratio: float       # part de la surface de la page
+
+
+class PagePanels(BaseModel):
+    page_index: int
+    reading_direction: str = "ltr"   # ltr (BD occidentale) | rtl (manga)
+    panel_count: int = 0
+    panels: list[Panel] = []
+    #: miniature de la page (JPEG base64) pour dessiner les cases dans l'UI
+    thumbnail: Optional[str] = None
+    thumb_width: int = 0
+    thumb_height: int = 0
+
+
 class Document(BaseModel):
     id: str = Field(default_factory=lambda: uuid4().hex)
     filename: str
@@ -45,6 +66,8 @@ class Document(BaseModel):
     total_images: int = 0
     avg_image_area_ratio: float = 0.0
     pages: list[DocumentPage] = []
+    #: cases détectées (BD), remplies à la demande via /documents/{id}/panels
+    panels: Optional[list[PagePanels]] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     def summary(self, max_chars: int = 1500) -> str:
