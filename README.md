@@ -30,6 +30,10 @@ videos-gen/
 │       │   ├── panels.py     #    segmentation des cases de BD (XY-cut OpenCV)
 │       │   ├── detect.py     #    détection de type (report/slides/sci/comic)
 │       │   └── schema.py     #    Document, DocumentPage, DocType, Panel
+│       ├── storyboard/       # 🎞️ Brief+Document → storyboard (Slice 2)
+│       │   ├── generator.py  #    rule_based + LLM, une case/shot pour la BD
+│       │   ├── textutils.py  #    extraction de points clés
+│       │   └── schema.py     #    Storyboard, Scene, Shot, ShotType
 │       ├── providers/        # 🔌 un fichier = un moteur vidéo (b-roll IA)
 │       │   ├── base.py       #    contrat commun (VideoProvider)
 │       │   ├── registry.py   #    liste des providers actifs
@@ -96,6 +100,7 @@ PDF ──▶ Extracteur ──▶ Détection type ──▶ Questions adaptativ
 | GET | `/api/documents/{id}` | Détail d'un document ingéré |
 | POST | `/api/brief` | `document_id` + réponses → `Brief` |
 | POST | `/api/documents/{id}/panels` | Segmente les cases d'une BD (`direction=ltr\|rtl`) |
+| POST | `/api/storyboard` | `Brief` → storyboard multi-format |
 
 ### 💥 Support des BD / mangas
 Le système gère les bandes dessinées de bout en bout pour le Slice 1 :
@@ -113,6 +118,33 @@ Le système gère les bandes dessinées de bout en bout pour le Slice 1 :
 Prochaine amélioration BD : **détection + OCR des bulles** et modèle
 state-of-the-art (Magi / DASS) branché via la même interface — utile pour des
 mangas à cases sans bordure que le XY-cut segmente « au mieux ».
+
+## 🎞️ Slice 2 — Storyboard multi-format (implémenté)
+
+`Brief` + `Document` → **storyboard JSON** : le plan de tournage que le rendu
+Remotion exécutera (Slice 3). Pensé **multi-format dès le départ** (9:16
+vertical prioritaire, 1:1, 16:9) et calibré pour de la **vidéo courte**
+(Reels / TikTok / Shorts).
+
+```
+Brief + Document ──▶ Générateur ──▶ Storyboard
+                     (rule_based        (scènes → shots typés :
+                      ou LLM)            titre, texte, page, case,
+                                         durée, transition, template)
+```
+
+- **Générateur** (`storyboard/generator.py`) : mode `rule_based` gratuit
+  (déterministe) ou LLM (Claude/OpenAI) avec repli automatique.
+  - **Documents texte** : carton titre → points clés par section → outro.
+  - **BD/motion-comic** : **une case par shot dans l'ordre de lecture** dès
+    que les cases ont été segmentées (`doc.panels`), quel que soit le type
+    détecté.
+- **Durées** calées sur `brief.duration_seconds`, bornées pour un rythme court.
+- **Template** choisi selon le type : `corporate`, `explainer`, `deck`,
+  `motion_comic`, `default`.
+- Endpoint : `POST /api/storyboard` (corps = objet `Brief`).
+- **UI** : bouton « Générer le storyboard » → timeline des scènes/shots avec
+  durées, références page/case, et formats cibles.
 
 ## 🚀 Démarrage rapide
 

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { api } from "../lib/api.js";
 import PanelViewer from "./PanelViewer.jsx";
+import StoryboardViewer from "./StoryboardViewer.jsx";
 
 const TYPE_LABELS = {
   report: "Rapport",
@@ -169,6 +170,11 @@ export default function IngestFlow() {
             <summary>Brief JSON</summary>
             <pre>{JSON.stringify(brief, null, 2)}</pre>
           </details>
+
+          <div className="storyboard-block">
+            <h3>2 · Storyboard</h3>
+            <StoryboardViewer brief={brief} />
+          </div>
         </div>
       )}
     </div>

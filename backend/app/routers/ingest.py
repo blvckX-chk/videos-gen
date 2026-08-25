@@ -13,6 +13,8 @@ from ..services.clarification import (
     build_brief,
     generate_questions,
 )
+from ..storyboard.generator import generate_storyboard
+from ..storyboard.schema import Storyboard
 from ..services.documents import (
     get_document,
     get_document_bytes,
@@ -110,3 +112,12 @@ async def make_brief(req: BriefRequest) -> Brief:
     if doc is None:
         raise HTTPException(404, "Document introuvable — ré-ingère le PDF.")
     return build_brief(doc, req.answers)
+
+
+@router.post("/storyboard", response_model=Storyboard)
+async def make_storyboard(brief: Brief) -> Storyboard:
+    """Brief + Document → storyboard multi-format (Slice 2)."""
+    doc = get_document(brief.document_id)
+    if doc is None:
+        raise HTTPException(404, "Document introuvable — ré-ingère le PDF.")
+    return await generate_storyboard(doc, brief)
