@@ -146,6 +146,47 @@ Brief + Document ──▶ Générateur ──▶ Storyboard
 - **UI** : bouton « Générer le storyboard » → timeline des scènes/shots avec
   durées, références page/case, et formats cibles.
 
+## 🎥 Slice 3 — Rendu Remotion vertical (implémenté)
+
+Le storyboard produit au Slice 2 est enfin rendu en **vraie vidéo MP4** — vertical
+1080×1920 par défaut, cœur 100 % gratuit, avec les décisions du blueprint v1.1
+intégrées dès la fondation.
+
+```
+Storyboard ──▶ Rasterisation ──▶ Remotion (Node/React) ──▶ MP4
+              (pages/cases        (composition, shots,
+               en JPEG HD)         Ken Burns, watermark)
+```
+
+- **Projet Remotion** : `remotion/` — TypeScript + React 18.
+  - `src/Root.tsx` déclare la composition, adapte la résolution au format cible
+    (9:16 / 1:1 / 16:9) via `calculateMetadata`.
+  - `src/shots/` — un composant par `ShotType` (title, text, page, panel, outro).
+  - `src/templates.ts` — palettes/typos par pôle (`default`, `corporate`,
+    `explainer`, `deck`, `motion_comic`).
+- **Backend `app/render/`** :
+  - `assets.py` — rasterise pages entières et cases rognées en JPEG HD.
+  - `service.py` — job asynchrone qui prépare les assets, écrit les props JSON,
+    lance `npx remotion render` en subprocess, capture la sortie et met à jour
+    le job.
+- **Champ `tier`** (`free` / `premium`) et **compteur de coût** posés sur
+  chaque `Job` — un job `free` reste à **0 centime**. Les entrées de coût
+  (`CostEntry`) sont prêtes à accueillir les appels ElevenLabs, HeyGen, etc.
+  au Slice 4.
+- **Statique** : `/renders/*.mp4` (vidéos) et `/assets/<doc_id>/*.jpg` (pages
+  rasterisées) sont servis par FastAPI.
+- **Chromium** : Remotion utilise le `headless_shell` fourni par
+  l'environnement (path via `DEFAULT_CHROMIUM` dans `render/service.py`).
+
+### Endpoints
+| Méthode | Route | Rôle |
+|--------|-------|------|
+| POST | `/api/render` | `{storyboard, tier, client_id}` → job de rendu |
+| GET | `/api/render/{id}` | Statut du rendu (polling) |
+
+**UI** : bouton « 🎥 Rendre la vidéo » sous le storyboard, sélecteur de tier
+Free/Premium, statut et lecteur du MP4 dès qu'il est prêt.
+
 ## 🚀 Démarrage rapide
 
 ### Tout-en-un (dev)

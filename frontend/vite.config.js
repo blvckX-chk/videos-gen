@@ -8,6 +8,8 @@ export default defineConfig({
     // Proxy des appels /api vers le backend FastAPI pour éviter les soucis CORS en dev.
     proxy: {
       "/api": "http://localhost:8000",
+      "/renders": "http://localhost:8000",
+      "/assets": "http://localhost:8000",
     },
   },
 });

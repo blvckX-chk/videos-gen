@@ -14,6 +14,12 @@ fi
 ./.venv/bin/uvicorn app.main:app --reload --port 8000 &
 BACK=$!
 
+# --- Remotion (assure que node_modules est prêt, pas de serveur) ---
+if [ -d "$ROOT/remotion" ]; then
+  cd "$ROOT/remotion"
+  [ -d node_modules ] || npm install --no-audit --no-fund
+fi
+
 # --- Frontend ---
 cd "$ROOT/frontend"
 [ -d node_modules ] || npm install

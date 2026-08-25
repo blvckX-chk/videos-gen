@@ -44,6 +44,13 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(brief),
     }).then(json),
+  render: (storyboard, tier = "free", client_id = null) =>
+    fetch(`${BASE}/render`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ storyboard, tier, client_id }),
+    }).then(json),
+  renderStatus: (id) => fetch(`${BASE}/render/${id}`).then(json),
   panels: (document_id, direction = "ltr", maxPages = 12) =>
     fetch(
       `${BASE}/documents/${document_id}/panels?direction=${direction}&max_pages=${maxPages}`,

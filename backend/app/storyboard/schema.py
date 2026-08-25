@@ -36,6 +36,9 @@ class Shot(BaseModel):
     transition_in: str = "fade"           # fade | slide | cut | zoom
     emphasis: Optional[str] = None        # mot/segment à souligner
     broll_prompt: Optional[str] = None    # prompt décor (Slice 3)
+    #: URL de l'asset pré-rasterisé (page/case) — rempli par le rendu, jamais
+    #: par le générateur. Sortie interne : ne survit pas hors du pipeline.
+    asset_url: Optional[str] = None
 
 
 class Scene(BaseModel):
