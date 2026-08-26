@@ -5,7 +5,9 @@ from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Uploa
 from pydantic import BaseModel, Field
 
 from ..design import service as svc
+from ..design.agent import DesignPlan, plan as agent_plan
 from ..design.processing import rembg_available
+from ..design.templates import TEMPLATE_SPECS, build_template
 from ..design.providers.base import ImageProviderInfo
 from ..design.providers.registry import all_image_providers
 from ..design.schema import (
@@ -147,6 +149,36 @@ async def compose_ep(req: ComposeRequest, background: BackgroundTasks) -> Design
 
 
 # ---------------------------------------------------------- Templates --- #
+class TemplateSpec(BaseModel):
+    id: str
+    label: str
+    description: str
+    params: list[str]
+
+
+@router.get("/templates", response_model=list[TemplateSpec])
+async def list_templates() -> list[TemplateSpec]:
+    return [TemplateSpec(id=k, **v) for k, v in TEMPLATE_SPECS.items()]
+
+
+class TemplateRequest(BaseModel):
+    """Rendu d'un template arbitraire — pratique pour l'UI et l'agent."""
+    template: str
+    params: dict = Field(default_factory=dict)
+    watermark: str | None = None
+
+
+@router.post("/templates/render", response_model=DesignJob)
+async def render_template(req: TemplateRequest, background: BackgroundTasks) -> DesignJob:
+    try:
+        comp = build_template(req.template, dict(req.params))
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(400, f"Paramètres invalides : {exc}") from exc
+    job = save_job(DesignJob(kind="compose"))
+    background.add_task(svc.run_compose_job, job.id, comp, req.watermark)
+    return job
+
+
 class QuoteCardRequest(BaseModel):
     text: str
     author: str | None = None
@@ -160,6 +192,36 @@ async def template_quote_card(req: QuoteCardRequest, background: BackgroundTasks
     comp = svc.quote_card(req.text, req.author, req.format, req.palette)
     job = save_job(DesignJob(kind="compose"))
     background.add_task(svc.run_compose_job, job.id, comp, req.watermark)
+    return job
+
+
+# --------------------------------------------------------------- Agent --- #
+class AgentPlanRequest(BaseModel):
+    intent: str
+    document_id: str | None = None
+    tier: Tier = Tier.FREE
+    format: ImageFormat = ImageFormat.SQUARE
+
+
+@router.post("/agent/plan", response_model=DesignPlan)
+async def agent_plan_ep(req: AgentPlanRequest) -> DesignPlan:
+    """Dry-run : propose un plan sans l'exécuter (pour revue humaine)."""
+    return await agent_plan(req.intent, req.document_id, req.tier, req.format)
+
+
+class AgentRunRequest(BaseModel):
+    """Exécute un plan (produit par /agent/plan, éventuellement édité)."""
+    plan: DesignPlan
+    watermark: str | None = "blvckUnlimited"
+
+
+@router.post("/agent/run", response_model=DesignJob)
+async def agent_run(req: AgentRunRequest, background: BackgroundTasks) -> DesignJob:
+    job = save_job(DesignJob(kind="agent"))
+    background.add_task(
+        svc.run_plan_job, job.id, [s.model_dump() for s in req.plan.steps],
+        req.plan.tier.value, req.watermark,
+    )
     return job
 
 

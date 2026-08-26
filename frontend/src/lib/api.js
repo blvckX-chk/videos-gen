@@ -117,6 +117,25 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       }).then(json),
+    templates: () => fetch(`${BASE}/design/templates`).then(json),
+    renderTemplate: (payload) =>
+      fetch(`${BASE}/design/templates/render`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(json),
+    agentPlan: (payload) =>
+      fetch(`${BASE}/design/agent/plan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(json),
+    agentRun: (payload) =>
+      fetch(`${BASE}/design/agent/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(json),
     job: (id) => fetch(`${BASE}/design/jobs/${id}`).then(json),
   },
   panels: (document_id, direction = "ltr", maxPages = 12) =>

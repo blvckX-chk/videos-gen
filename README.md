@@ -271,11 +271,31 @@ pour un futur super-agent orchestré.
 
 Garde-fou **tier v1.1** : un job `free` ne peut pas invoquer un provider payant.
 
-### Deuxième couche (à venir)
-Le **super-agent orchestré** viendra par-dessus cette fondation : un LLM
-reçoit une intention (« crée 3 stories pour promouvoir le rapport ») et
-chaîne les briques (extraire points clés → générer visuels → composer →
-décliner par format). Câblé une fois le toolkit stabilisé.
+### Templates livrés
+| Nom | Rôle |
+|---|---|
+| `quote_card` | Grosse citation + auteur + accent |
+| `stat_card` | Un chiffre-clé XL + label + contexte + tendance (↗/↘) |
+| `summary_card` | Titre + 3-5 puces numérotées (format carrousel) |
+| `product_card` | Photo produit (ou monogramme placeholder) + nom + prix + tagline |
+
+Endpoint générique : `POST /api/design/templates/render` (`template`, `params`)
+et registre exposé via `GET /api/design/templates`.
+
+### 🤖 Super-agent graphique
+Par-dessus le toolkit : un LLM reçoit une intention (« crée une série de
+visuels pour promouvoir le rapport ») + un `document_id` optionnel, et
+planifie une séquence de templates + générations.
+
+- **Plan éditable avant exécution** (validation humaine, blueprint v1.1).
+- Mode `rule_based` (gratuit, sans clé) qui exploite les points clés + les
+  chiffres extraits du document, ou LLM (Claude/OpenAI) avec repli.
+- Garde-fou tier free : un plan `free` ne peut planifier que des étapes
+  gratuites (templates + Pollinations).
+
+Endpoints :
+- `POST /api/design/agent/plan` — dry-run (renvoie le plan)
+- `POST /api/design/agent/run` — exécute un plan (renvoie un job)
 
 ## 🚀 Démarrage rapide
 

@@ -155,6 +155,64 @@ async def run_resize_job(job_id: str, asset_id: str, formats: list[str]) -> None
         save_job(job)
 
 
+async def run_plan_job(job_id: str, plan_steps: list, tier_value: str,
+                        watermark: str | None = None) -> None:
+    """Exécute un plan complet de l'agent : chaque étape produit un asset.
+
+    On accepte `plan_steps` en `list` brut (dict) plutôt que typée pour ne pas
+    créer d'import circulaire ; la validation typée est faite à l'entrée par
+    le router."""
+    from .agent import PlanStep  # imports différés
+    from .templates import build_template
+
+    job = get_job(job_id)
+    if job is None:
+        return
+    try:
+        job.status = DesignJobStatus.RUNNING
+        job.touch()
+
+        out_ids: list[str] = []
+        for raw in plan_steps:
+            step = raw if isinstance(raw, PlanStep) else PlanStep(**raw)
+            if step.type == "template":
+                if not step.template:
+                    continue
+                comp = build_template(step.template, dict(step.params))
+                img = compose(comp)
+                if watermark:
+                    img = apply_watermark(img, watermark)
+                asset = _asset_from_image(
+                    img, name=comp.name, kind=AssetKind.COMPOSED,
+                    format=str(comp.format),
+                )
+                out_ids.append(asset.id)
+            elif step.type == "generate":
+                if not step.prompt:
+                    continue
+                w, h = _dims_for_format(step.format)
+                prov = _pick_provider(step.provider, Tier(tier_value))
+                img = await prov.generate(prompt=step.prompt, width=w, height=h)
+                img = processing.fit_cover(img.convert("RGBA"), w, h)
+                asset = _asset_from_image(
+                    img, name=(step.prompt or "")[:60] or "génération",
+                    kind=AssetKind.GENERATED, provider=prov.id,
+                    prompt=step.prompt, format=step.format.value,
+                )
+                out_ids.append(asset.id)
+        job.output_asset_ids = out_ids
+        job.status = DesignJobStatus.SUCCEEDED if out_ids else DesignJobStatus.FAILED
+        if not out_ids:
+            job.error = "Le plan n'a produit aucun asset."
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("exécution plan %s échouée", job_id)
+        job.status = DesignJobStatus.FAILED
+        job.error = str(exc)
+    finally:
+        job.touch()
+        save_job(job)
+
+
 async def run_compose_job(job_id: str, comp: Composition,
                            watermark: str | None = None) -> None:
     job = get_job(job_id)
@@ -182,39 +240,10 @@ async def run_compose_job(job_id: str, comp: Composition,
 
 
 # --------------------------------------------------------------------------- #
-# Templates prêts à l'emploi (fabriques de Composition)
+# Templates prêts à l'emploi — voir `design/templates.py`.
+# On ré-exporte `quote_card` pour la rétrocompatibilité du router.
 # --------------------------------------------------------------------------- #
-def quote_card(text: str, author: str | None = None,
-               format: ImageFormat = ImageFormat.SQUARE,
-               palette: dict[str, str] | None = None) -> Composition:
-    """Carte de citation — grosse phrase + auteur. Alimenté par les points
-    clés extraits d'un PDF au Slice 1 (synergie forte)."""
-    p = palette or {"bg1": "#0B0D12", "bg2": "#1C1813", "fg": "#F1EBE0", "accent": "#E4A93E"}
-    w, h = FORMAT_DIMS[format]
-    from .schema import Anchor, Layer, LayerType
-    return Composition(
-        name="Quote card",
-        format=format,
-        background=p["bg1"],
-        layers=[
-            Layer(type=LayerType.GRADIENT, color=p["bg1"], color2=p["bg2"], gradient_angle=120),
-            Layer(type=LayerType.TEXT, text="“", font_size=w // 4,
-                  font_weight="bold", text_color=p["accent"],
-                  anchor=Anchor.TOP_LEFT, dx=int(w * 0.06), dy=int(h * 0.05),
-                  max_width=w // 3),
-            Layer(type=LayerType.TEXT, text=text, font_size=max(48, w // 16),
-                  font_weight="bold", text_color=p["fg"], text_align="left",
-                  max_width=int(w * 0.82), line_height=1.15, shadow=True,
-                  anchor=Anchor.CENTER, dx=0, dy=-30),
-            Layer(type=LayerType.SHAPE, shape="rect", width=int(w * 0.12), height=4,
-                  fill=p["accent"], anchor=Anchor.BOTTOM_LEFT,
-                  dx=int(w * 0.09), dy=-int(h * 0.13)),
-            Layer(type=LayerType.TEXT, text=author or "", font_size=max(22, w // 44),
-                  font_weight="regular", text_color=p["accent"],
-                  max_width=int(w * 0.7),
-                  anchor=Anchor.BOTTOM_LEFT, dx=int(w * 0.09), dy=-int(h * 0.09)),
-        ],
-    )
+from .templates import quote_card  # noqa: E402,F401
 
 
 # --------------------------------------------------------------------------- #

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api.js";
 import DesignLibrary from "./DesignLibrary.jsx";
+import DesignAgent from "./DesignAgent.jsx";
 
 const FORMAT_LABEL = {
   square: "Carré 1080×1080",
@@ -24,11 +25,11 @@ export default function DesignStudio() {
   const [tier, setTier] = useState("free");
   const [genJob, setGenJob] = useState(null);
 
-  // Quote card
-  const [quoteText, setQuoteText] = useState("La contrainte devient composition.");
-  const [quoteAuthor, setQuoteAuthor] = useState("blvckUnlimited");
-  const [quoteFormat, setQuoteFormat] = useState("square");
-  const [quoteJob, setQuoteJob] = useState(null);
+  // Templates
+  const [templates, setTemplates] = useState([]);
+  const [pickedTemplate, setPickedTemplate] = useState("quote_card");
+  const [tplParams, setTplParams] = useState('{"text":"La contrainte devient composition.","author":"blvckUnlimited","format":"square"}');
+  const [tplJob, setTplJob] = useState(null);
 
   // Opérations sur asset sélectionné
   const [pickedAsset, setPickedAsset] = useState(null);
@@ -37,6 +38,15 @@ export default function DesignStudio() {
   const uploadRef = useRef();
 
   useEffect(() => { api.design.info().then(setInfo).catch(() => {}); }, []);
+  useEffect(() => { api.design.templates().then(setTemplates).catch(() => {}); }, []);
+
+  // Presets par template pour aider l'utilisateur (params attendus)
+  const TPL_PRESETS = {
+    quote_card: '{"text":"La contrainte devient composition.","author":"blvckUnlimited","format":"square"}',
+    stat_card: '{"number":"4,2 M€","label":"CA 2025","context":"+18% vs 2024","trend":"up","format":"square"}',
+    summary_card: '{"title":"L\'essentiel","subtitle":"rapport","bullets":["Point 1","Point 2","Point 3"],"format":"square"}',
+    product_card: '{"name":"Produit","price":"9 900 CFA","tagline":"tagline courte","format":"square"}',
+  };
 
   function bump() { setRefreshKey((k) => k + 1); }
 
@@ -74,15 +84,17 @@ export default function DesignStudio() {
     } catch (err) { setError(err.message); }
   }
 
-  async function makeQuote() {
+  async function makeTemplate() {
     setError(null);
+    let params;
+    try { params = JSON.parse(tplParams); }
+    catch { setError("JSON de params invalide."); return; }
     try {
-      const j = await api.design.quoteCard({
-        text: quoteText, author: quoteAuthor, format: quoteFormat,
-        watermark: "blvckUnlimited",
+      const j = await api.design.renderTemplate({
+        template: pickedTemplate, params, watermark: "blvckUnlimited",
       });
-      setQuoteJob(j);
-      pollJob(j.id, setQuoteJob, () => bump());
+      setTplJob(j);
+      pollJob(j.id, setTplJob, () => bump());
     } catch (err) { setError(err.message); }
   }
 
@@ -108,6 +120,10 @@ export default function DesignStudio() {
         déclinaison multi-format. Tier <code>free</code> par défaut ; providers premium
         activables via le champ <code>tier</code>.
       </p>
+
+      <section className="ds-section" style={{ borderTop: "none", paddingTop: 0 }}>
+        <DesignAgent onDone={bump} />
+      </section>
 
       {info && !info.rembg_available && (
         <div className="banner warn">
@@ -156,36 +172,37 @@ export default function DesignStudio() {
         </p>}
       </section>
 
-      {/* -------------------------------------------------------- Quote card */}
+      {/* ---------------------------------------------------------- Templates */}
       <section className="ds-section">
-        <h3>Template — carte de citation</h3>
+        <h3>Templates</h3>
         <p className="muted small-text">
-          Alimenté par les points clés extraits d'un PDF (Slice 1). 100 % déterministe, aucun coût.
+          Compositions déterministes, aucun coût. Choisis un template, ajuste
+          les paramètres JSON, fabrique.
         </p>
         <div className="ds-grid">
-          <label className="field">
-            <span>Texte</span>
-            <textarea rows={2} value={quoteText} onChange={(e) => setQuoteText(e.target.value)} />
-          </label>
           <label className="field small">
-            <span>Auteur</span>
-            <input type="text" value={quoteAuthor} onChange={(e) => setQuoteAuthor(e.target.value)} />
-          </label>
-          <label className="field small">
-            <span>Format</span>
-            <select value={quoteFormat} onChange={(e) => setQuoteFormat(e.target.value)}>
-              {["square", "story", "landscape"].map((f) => (
-                <option key={f} value={f}>{FORMAT_LABEL[f]}</option>
+            <span>Template</span>
+            <select value={pickedTemplate} onChange={(e) => {
+              const v = e.target.value; setPickedTemplate(v);
+              if (TPL_PRESETS[v]) setTplParams(TPL_PRESETS[v]);
+            }}>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>{t.label}</option>
               ))}
             </select>
           </label>
+          <label className="field">
+            <span>Params (JSON)</span>
+            <textarea rows={4} value={tplParams} onChange={(e) => setTplParams(e.target.value)}
+              spellCheck={false} style={{ fontFamily: "monospace", fontSize: 12 }} />
+          </label>
         </div>
-        <button className="primary" onClick={makeQuote}
-          disabled={!quoteText.trim() || (quoteJob && quoteJob.status === "running")}>
-          🧩 Fabriquer la carte
+        <button className="primary" onClick={makeTemplate}
+          disabled={tplJob && tplJob.status === "running"}>
+          🧩 Fabriquer le visuel
         </button>
-        {quoteJob && <p className="muted small-text">Composition : <b>{quoteJob.status}</b>
-          {quoteJob.error && <span className="err"> — {quoteJob.error}</span>}
+        {tplJob && <p className="muted small-text">Composition : <b>{tplJob.status}</b>
+          {tplJob.error && <span className="err"> — {tplJob.error}</span>}
         </p>}
       </section>
 
