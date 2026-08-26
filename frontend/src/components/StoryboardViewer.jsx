@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api.js";
+import AudioLibrary from "./AudioLibrary.jsx";
 
 const SHOT_LABEL = {
   title: "Titre",
@@ -21,6 +22,12 @@ export default function StoryboardViewer({ brief }) {
   const [rendering, setRendering] = useState(false);
   const [tier, setTier] = useState("free");
   const poller = useRef(null);
+  // Post-rendu : coller une piste audio de la bibliothèque au MP4 obtenu.
+  const [pickedAudio, setPickedAudio] = useState(null);
+  const [mixMode, setMixMode] = useState(false);
+  const [audioJob, setAudioJob] = useState(null);
+  const audioPoller = useRef(null);
+  useEffect(() => () => audioPoller.current && clearInterval(audioPoller.current), []);
 
   useEffect(() => () => poller.current && clearInterval(poller.current), []);
 
@@ -156,6 +163,80 @@ export default function StoryboardViewer({ brief }) {
                     <a href={renderJob.video_url} download className="ghost small">
                       Télécharger le MP4
                     </a>
+
+                    <div className="post-audio">
+                      <h4>Ajouter une piste audio</h4>
+                      <p className="muted small-text">
+                        Choisis un clip depuis l'onglet Audio toolkit, ou laisse
+                        <b> Aucun audio</b> pour un MP4 muet.
+                      </p>
+                      <AudioLibrary
+                        mode="picker"
+                        selectedId={pickedAudio}
+                        onSelect={setPickedAudio}
+                      />
+                      <label className="checkbox-line">
+                        <input
+                          type="checkbox"
+                          checked={mixMode}
+                          onChange={(e) => setMixMode(e.target.checked)}
+                        />
+                        <span>Mixer par-dessus l'original (sinon : remplace)</span>
+                      </label>
+                      <button
+                        className="primary"
+                        disabled={audioJob && audioJob.status === "running"}
+                        onClick={async () => {
+                          try {
+                            const videoId = renderJob.video_url
+                              .replace("/renders/", "")
+                              .replace(".mp4", "");
+                            const j = await api.audio.apply({
+                              video_source_id: videoId,
+                              audio_clip_id: pickedAudio,
+                              mix_with_original: mixMode,
+                            });
+                            setAudioJob(j);
+                            audioPoller.current && clearInterval(audioPoller.current);
+                            audioPoller.current = setInterval(async () => {
+                              const upd = await api.audio.job(j.id);
+                              setAudioJob(upd);
+                              if (upd.status === "succeeded" || upd.status === "failed")
+                                clearInterval(audioPoller.current);
+                            }, 1500);
+                          } catch (e) { setError(e.message); }
+                        }}
+                      >
+                        🎧 Appliquer au MP4
+                      </button>
+                      {audioJob && (
+                        <div className="apply-result">
+                          <p className="muted small-text">
+                            Rendu audio : <b>{audioJob.status}</b>
+                            {audioJob.error && (
+                              <span className="err"> — {audioJob.error}</span>
+                            )}
+                          </p>
+                          {audioJob.status === "succeeded" && audioJob.output_video_url && (
+                            <>
+                              <video
+                                src={audioJob.output_video_url}
+                                controls
+                                playsInline
+                                style={{ maxWidth: 320, width: "100%", borderRadius: 12 }}
+                              />
+                              <a
+                                className="ghost small"
+                                href={audioJob.output_video_url}
+                                download
+                              >
+                                Télécharger la version avec audio
+                              </a>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

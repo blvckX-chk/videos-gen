@@ -3,6 +3,7 @@ import { api } from "./lib/api.js";
 import PromptForm from "./components/PromptForm.jsx";
 import JobCard from "./components/JobCard.jsx";
 import IngestFlow from "./components/IngestFlow.jsx";
+import AudioToolkit from "./components/AudioToolkit.jsx";
 
 export default function App() {
   const [providers, setProviders] = useState([]);
@@ -64,11 +65,15 @@ export default function App() {
         <button className={tab === "prompt" ? "tab active" : "tab"} onClick={() => setTab("prompt")}>
           Depuis un prompt (b-roll)
         </button>
+        <button className={tab === "audio" ? "tab active" : "tab"} onClick={() => setTab("audio")}>
+          🎧 Audio toolkit
+        </button>
       </nav>
 
       {error && <div className="banner error">{error}</div>}
 
       {tab === "pdf" && <IngestFlow />}
+      {tab === "audio" && <AudioToolkit />}
 
       {tab === "prompt" && (
         <>

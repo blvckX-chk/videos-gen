@@ -187,6 +187,39 @@ Storyboard ──▶ Rasterisation ──▶ Remotion (Node/React) ──▶ MP4
 **UI** : bouton « 🎥 Rendre la vidéo » sous le storyboard, sélecteur de tier
 Free/Premium, statut et lecteur du MP4 dès qu'il est prêt.
 
+## 🎧 Audio toolkit (extraire / isoler / réutiliser)
+
+Module autonome + intégré au pipeline PDF→vidéo. Trois opérations :
+
+- **Extraire l'audio d'une vidéo** — upload MP4/MOV, extraction MP3 via ffmpeg.
+- **Isoler voix vs musique** — séparation par **Demucs** (open-source SOTA,
+  Apache-2.0). Modèle téléchargé au 1er usage (~80 Mo).
+- **Remuxer un audio sur une vidéo** — remplacer, mixer (ducking 15 %) ou
+  **supprimer** entièrement la piste. Fonctionne sur les vidéos uploadées
+  ET sur les MP4 rendus par le pipeline (Slice 3).
+
+Une **bibliothèque partagée** de clips (`original`, `vocals`, `instrumental`,
+`custom`) est utilisable depuis l'onglet Audio toolkit ET depuis le rendu
+Storyboard (choisir une piste de fond après avoir rendu le MP4).
+
+### Endpoints
+| Méthode | Route | Rôle |
+|--------|-------|------|
+| GET | `/api/audio/info` | Capacités du serveur (Demucs présent ?) |
+| GET | `/api/audio/library` | Liste des clips |
+| POST | `/api/audio/upload-video` | Upload vidéo → extraction audio auto |
+| POST | `/api/audio/upload-audio` | Ajout direct d'un fichier audio |
+| POST | `/api/audio/clips/{id}/separate` | Séparation voix/musique (Demucs, async) |
+| POST | `/api/audio/apply` | Coller un audio (ou le supprimer) sur une vidéo |
+| GET | `/api/audio/jobs/{id}` | Statut d'un job long |
+
+### Installation Demucs
+```bash
+cd backend && . .venv/bin/activate
+pip install demucs   # attention : pull PyTorch (~2 Go)
+```
+Sans Demucs : extraction et remux fonctionnent, la séparation renvoie 503.
+
 ## 🚀 Démarrage rapide
 
 ### Tout-en-un (dev)

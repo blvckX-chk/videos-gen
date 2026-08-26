@@ -187,3 +187,33 @@ button.small { padding: 5px 10px; font-size: 12px; }
 .render-status .badge.failed { background: #7f1d1d60; color: #fca5a5; }
 .render-player { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .render-player video { max-width: 320px; width: 100%; border-radius: 12px; background: #000; }
+
+/* --- Audio toolkit --- */
+.banner.warn { background: #78350f40; border: 1px solid #f59e0b; color: #fcd34d; padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; }
+.uploads { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 16px; }
+.upload { display: flex; flex-direction: column; gap: 6px; padding: 18px; background: var(--panel-2); border: 1px dashed var(--border-strong, var(--border)); border-radius: 12px; cursor: pointer; transition: border-color .15s; }
+.upload:hover { border-color: var(--accent); }
+.upload span { font-weight: 600; }
+.upload em { font-style: normal; font-size: 12px; color: var(--muted); }
+.upload input { font-size: 12px; }
+
+.last-clip { margin-top: 22px; }
+.last-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.err { color: #fca5a5; }
+
+.apply-panel { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--border); }
+.checkbox-line { display: flex; align-items: center; gap: 8px; margin: 12px 0; font-size: 13px; color: var(--muted); }
+.apply-result { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.post-audio { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--border); width: 100%; }
+.post-audio h4 { margin: 0 0 6px; font-size: 14px; }
+
+.library-section { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--border); }
+.audio-lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin: 10px 0; }
+.audio-card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.audio-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px #6d5efc44; }
+.ac-head { display: flex; align-items: center; gap: 10px; }
+.ac-emoji { font-size: 20px; }
+.ac-title { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+.ac-title b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-kind { font-size: 11px; color: var(--muted); }
+audio { filter: invert(0.92) hue-rotate(180deg); }

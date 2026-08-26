@@ -51,6 +51,35 @@ export const api = {
       body: JSON.stringify({ storyboard, tier, client_id }),
     }).then(json),
   renderStatus: (id) => fetch(`${BASE}/render/${id}`).then(json),
+
+  // Audio toolkit
+  audio: {
+    info: () => fetch(`${BASE}/audio/info`).then(json),
+    library: () => fetch(`${BASE}/audio/library`).then(json),
+    clip: (id) => fetch(`${BASE}/audio/clips/${id}`).then(json),
+    del: (id) => fetch(`${BASE}/audio/clips/${id}`, { method: "DELETE" }).then(json),
+    uploadVideo: (file, name) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      if (name) fd.append("name", name);
+      return fetch(`${BASE}/audio/upload-video`, { method: "POST", body: fd }).then(json);
+    },
+    uploadAudio: (file, name) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      if (name) fd.append("name", name);
+      return fetch(`${BASE}/audio/upload-audio`, { method: "POST", body: fd }).then(json);
+    },
+    separate: (clipId) =>
+      fetch(`${BASE}/audio/clips/${clipId}/separate`, { method: "POST" }).then(json),
+    apply: (payload) =>
+      fetch(`${BASE}/audio/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(json),
+    job: (id) => fetch(`${BASE}/audio/jobs/${id}`).then(json),
+  },
   panels: (document_id, direction = "ltr", maxPages = 12) =>
     fetch(
       `${BASE}/documents/${document_id}/panels?direction=${direction}&max_pages=${maxPages}`,
