@@ -80,6 +80,45 @@ export const api = {
       }).then(json),
     job: (id) => fetch(`${BASE}/audio/jobs/${id}`).then(json),
   },
+
+  // Graphic design
+  design: {
+    info: () => fetch(`${BASE}/design/info`).then(json),
+    assets: () => fetch(`${BASE}/design/assets`).then(json),
+    asset: (id) => fetch(`${BASE}/design/assets/${id}`).then(json),
+    del: (id) => fetch(`${BASE}/design/assets/${id}`, { method: "DELETE" }).then(json),
+    upload: (file, name) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      if (name) fd.append("name", name);
+      return fetch(`${BASE}/design/upload`, { method: "POST", body: fd }).then(json);
+    },
+    generate: (payload) =>
+      fetch(`${BASE}/design/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(json),
+    removeBg: (asset_id) =>
+      fetch(`${BASE}/design/remove-bg`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ asset_id }),
+      }).then(json),
+    resize: (asset_id, formats) =>
+      fetch(`${BASE}/design/resize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ asset_id, formats }),
+      }).then(json),
+    quoteCard: (payload) =>
+      fetch(`${BASE}/design/templates/quote-card`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(json),
+    job: (id) => fetch(`${BASE}/design/jobs/${id}`).then(json),
+  },
   panels: (document_id, direction = "ltr", maxPages = 12) =>
     fetch(
       `${BASE}/documents/${document_id}/panels?direction=${direction}&max_pages=${maxPages}`,

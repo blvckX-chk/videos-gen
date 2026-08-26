@@ -220,6 +220,63 @@ pip install demucs   # attention : pull PyTorch (~2 Go)
 ```
 Sans Demucs : extraction et remux fonctionnent, la séparation renvoie 503.
 
+## 🎨 Graphic Design (fondation du toolkit)
+
+Module de visuels statiques — sœur graphique de la vidéo. Alimente le CM
+(posts IG/FB, stories, thumbnails YouTube, quote cards) et prépare le terrain
+pour un futur super-agent orchestré.
+
+**Fondation livrée** — opérations déterministes, ~0 dépendance lourde :
+
+- **Génération d'images** via un pattern multi-providers extensible
+  (miroir du module vidéo) :
+  - `pollinations` — gratuit, sans clé, sans compte (défaut du tier free)
+  - `fal_image` — Flux/SDXL via fal.ai (crédits gratuits + facturé)
+  - Ajouter un provider = créer une sous-classe `ImageProvider` + registry
+- **Templates** — fabrique de `Composition` déclarative. Livré : **quote card**
+  (grosse citation + auteur + accent), alimenté par les points clés extraits
+  au Slice 1.
+- **Composer** (`design/composer.py`) — empile des `Layer` (solid, gradient,
+  image, text, shape) sur un canvas de la taille du format cible, avec
+  ancrage, opacité, coins arrondis, watermark blvckUnlimited assorti à la vidéo.
+- **Traitement PIL** :
+  - Redimensionnement / recadrage intelligent (`fit_cover`, focus règle des tiers)
+  - Décliner un asset en plusieurs formats en un job
+  - Overlays typographiques (wrap texte, shadow, stroke, alignement)
+  - Retrait de fond via **`rembg`** (u2net, ~170 Mo, CPU OK, Apache-2.0) — optionnel
+- **Bibliothèque** — assets `generated`, `uploaded`, `processed`, `composed`.
+  Réutilisables dans le pipeline vidéo (ils exposent une URL PNG normale).
+
+### Formats livrés
+| Nom | Dimensions | Usage |
+|---|---|---|
+| `square` | 1080 × 1080 | Post IG/FB |
+| `story` | 1080 × 1920 | Story / cover de Reel |
+| `landscape` | 1280 × 720 | Thumbnail YouTube |
+| `large_square` | 2048 × 2048 | Print / retail |
+| `a4` | 2480 × 3508 | Impression 300 DPI |
+
+### Endpoints
+| Méthode | Route | Rôle |
+|--------|-------|------|
+| GET | `/api/design/info` | Formats + providers + capacité rembg |
+| GET | `/api/design/assets` | Bibliothèque |
+| POST | `/api/design/upload` | Upload image |
+| POST | `/api/design/generate` | Génération IA (tier free/premium) |
+| POST | `/api/design/remove-bg` | Retrait de fond (rembg) |
+| POST | `/api/design/resize` | Décliner en plusieurs formats |
+| POST | `/api/design/compose` | Rendu d'une `Composition` complète |
+| POST | `/api/design/templates/quote-card` | Quote card prête à l'emploi |
+| GET | `/api/design/jobs/{id}` | Statut d'un job |
+
+Garde-fou **tier v1.1** : un job `free` ne peut pas invoquer un provider payant.
+
+### Deuxième couche (à venir)
+Le **super-agent orchestré** viendra par-dessus cette fondation : un LLM
+reçoit une intention (« crée 3 stories pour promouvoir le rapport ») et
+chaîne les briques (extraire points clés → générer visuels → composer →
+décliner par format). Câblé une fois le toolkit stabilisé.
+
 ## 🚀 Démarrage rapide
 
 ### Tout-en-un (dev)

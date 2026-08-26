@@ -10,6 +10,9 @@ export default defineConfig({
       "/api": "http://localhost:8000",
       "/renders": "http://localhost:8000",
       "/assets": "http://localhost:8000",
+      "/audio": "http://localhost:8000",
+      "/audio_sources": "http://localhost:8000",
+      "/design": "http://localhost:8000",
     },
   },
 });

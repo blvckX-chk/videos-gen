@@ -11,6 +11,7 @@ from .config import get_settings
 from .render.service import storage_root
 from .routers.api import router as api_router
 from .routers.audio import router as audio_router
+from .routers.design import router as design_router
 from .routers.ingest import router as ingest_router
 from .routers.render import router as render_router
 
@@ -36,17 +37,19 @@ app.include_router(api_router)
 app.include_router(ingest_router)
 app.include_router(render_router)
 app.include_router(audio_router)
+app.include_router(design_router)
 
 # Fichiers statiques : assets rasterisés (pages/cases) + vidéos rendues +
-# clips audio de l'audio toolkit. Chromium (Remotion) doit pouvoir fetcher
-# /assets/<doc_id>/<file>.jpg pendant le rendu.
+# clips audio + images du module design. Chromium (Remotion) doit pouvoir
+# fetcher /assets/<doc_id>/<file>.jpg pendant le rendu.
 _storage = storage_root()
-for sub in ("assets", "renders", "audio", "audio_sources"):
+for sub in ("assets", "renders", "audio", "audio_sources", "design"):
     (_storage / sub).mkdir(parents=True, exist_ok=True)
 app.mount("/assets", StaticFiles(directory=_storage / "assets"), name="assets")
 app.mount("/renders", StaticFiles(directory=_storage / "renders"), name="renders")
 app.mount("/audio", StaticFiles(directory=_storage / "audio"), name="audio")
 app.mount("/audio_sources", StaticFiles(directory=_storage / "audio_sources"), name="audio_sources")
+app.mount("/design", StaticFiles(directory=_storage / "design"), name="design")
 
 
 @app.get("/health")

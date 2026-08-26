@@ -4,6 +4,7 @@ import PromptForm from "./components/PromptForm.jsx";
 import JobCard from "./components/JobCard.jsx";
 import IngestFlow from "./components/IngestFlow.jsx";
 import AudioToolkit from "./components/AudioToolkit.jsx";
+import DesignStudio from "./components/DesignStudio.jsx";
 
 export default function App() {
   const [providers, setProviders] = useState([]);
@@ -68,12 +69,16 @@ export default function App() {
         <button className={tab === "audio" ? "tab active" : "tab"} onClick={() => setTab("audio")}>
           🎧 Audio toolkit
         </button>
+        <button className={tab === "design" ? "tab active" : "tab"} onClick={() => setTab("design")}>
+          🎨 Graphic design
+        </button>
       </nav>
 
       {error && <div className="banner error">{error}</div>}
 
       {tab === "pdf" && <IngestFlow />}
       {tab === "audio" && <AudioToolkit />}
+      {tab === "design" && <DesignStudio />}
 
       {tab === "prompt" && (
         <>

@@ -217,3 +217,28 @@ button.small { padding: 5px 10px; font-size: 12px; }
 .ac-title b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ac-kind { font-size: 11px; color: var(--muted); }
 audio { filter: invert(0.92) hue-rotate(180deg); }
+
+/* --- Graphic Design --- */
+.ds-section { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--border); }
+.ds-section:first-of-type { border-top: none; padding-top: 6px; }
+.ds-section h3 { margin: 0 0 8px; font-size: 15px; }
+.ds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 12px 0; align-items: end; }
+.ds-grid textarea, .ds-grid input[type=text], .ds-grid select {
+  background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 8px 10px; font: inherit; width: 100%;
+}
+.ds-grid .field { display: flex; flex-direction: column; gap: 4px; }
+.ds-grid .field span { font-size: 12px; color: var(--muted); }
+.ops-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+
+.design-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 8px; }
+.design-card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: border-color .15s, box-shadow .15s; }
+.design-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px #6d5efc44; }
+.dc-thumb { width: 100%; background: repeating-conic-gradient(#2a2a35 0 25%, #1c1c26 0 50%) 0 0 / 20px 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.dc-thumb img { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; }
+.dc-meta { padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+.dc-title { display: flex; gap: 6px; align-items: center; font-size: 12px; }
+.dc-title b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.dc-details { font-size: 11px; color: var(--muted); display: flex; gap: 4px; flex-wrap: wrap; }
+.dc-actions { display: flex; gap: 4px; margin-top: 6px; }
+.dc-actions .ghost { padding: 3px 8px; font-size: 12px; text-decoration: none; }
