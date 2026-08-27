@@ -138,6 +138,24 @@ export const api = {
       }).then(json),
     job: (id) => fetch(`${BASE}/design/jobs/${id}`).then(json),
   },
+
+  // Super-agent unifié (campagne multi-modalités)
+  campaign: {
+    plan: (payload) =>
+      fetch(`${BASE}/campaign/plan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(json),
+    run: (payload) =>
+      fetch(`${BASE}/campaign/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(json),
+    job: (id) => fetch(`${BASE}/campaign/jobs/${id}`).then(json),
+    jobs: () => fetch(`${BASE}/campaign/jobs`).then(json),
+  },
   panels: (document_id, direction = "ltr", maxPages = 12) =>
     fetch(
       `${BASE}/documents/${document_id}/panels?direction=${direction}&max_pages=${maxPages}`,

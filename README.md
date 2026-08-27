@@ -297,6 +297,56 @@ Endpoints :
 - `POST /api/design/agent/plan` — dry-run (renvoie le plan)
 - `POST /api/design/agent/run` — exécute un plan (renvoie un job)
 
+## 🚀 Super-agent unifié — Campagnes multi-modalités
+
+Sommet du système. Reçoit une **intention** + un **document optionnel** →
+produit une **campagne complète** mixant Reel, posts, stories, thumbnails
+et affiches, dans la même charte, alimentée par le même document.
+
+```
+Intention + Document (optionnel)
+        │
+        ▼
+   Planner (rule_based / LLM)  ──▶  Campaign JSON éditable (validation humaine)
+        │
+        ▼
+   Executor (dispatch multi-modules)
+        │
+        ├──▶ design.templates + composer  (image_template)
+        ├──▶ design.providers (Pollinations, fal)  (image_generate)
+        └──▶ storyboard + render.Remotion   (video_storyboard)
+        │
+        ▼
+   Deliverables : PNG + MP4 servis via /design et /renders
+```
+
+**Types d'étapes** :
+- `image_template` — un template design (`quote_card`, `stat_card`,
+  `summary_card`, `product_card`) instancié avec ses params
+- `image_generate` — génération IA (Pollinations gratuit, fal premium)
+- `video_storyboard` — génère un Brief synthétique + storyboard + Remotion
+  → MP4 (utilise directement l'infra Slice 2 + 3)
+
+**Garanties du blueprint v1.1** :
+- Plan **éditable avant exécution** (validation humaine)
+- **Best-effort** : une étape en échec n'arrête pas les autres → statut
+  `partial` avec la liste des erreurs
+- **Garde-fou tier free** : un plan `free` ne peut pas planifier
+  d'étape utilisant un provider payant
+
+### Endpoints
+| Méthode | Route | Rôle |
+|--------|-------|------|
+| POST | `/api/campaign/plan` | Dry-run — renvoie un plan éditable |
+| POST | `/api/campaign/run` | Exécute un plan (ou son `campaign_id`) |
+| GET | `/api/campaign/jobs/{id}` | Statut + livrables + erreurs partielles |
+| GET | `/api/campaign/jobs` | Historique |
+
+**UI** : nouvel onglet **🚀 Campagne (agent)** en tête — intention, document,
+tier, revue du plan étape par étape (chaque étape retirable), toggle vidéo
+(le rendu Remotion prend plusieurs minutes), grille de livrables avec
+téléchargement.
+
 ## 🚀 Démarrage rapide
 
 ### Tout-en-un (dev)

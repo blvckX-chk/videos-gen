@@ -5,12 +5,13 @@ import JobCard from "./components/JobCard.jsx";
 import IngestFlow from "./components/IngestFlow.jsx";
 import AudioToolkit from "./components/AudioToolkit.jsx";
 import DesignStudio from "./components/DesignStudio.jsx";
+import CampaignStudio from "./components/CampaignStudio.jsx";
 
 export default function App() {
   const [providers, setProviders] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [error, setError] = useState(null);
-  const [tab, setTab] = useState("pdf");
+  const [tab, setTab] = useState("campaign");
   const pollers = useRef({});
 
   useEffect(() => {
@@ -60,6 +61,9 @@ export default function App() {
       </header>
 
       <nav className="tabs">
+        <button className={tab === "campaign" ? "tab active" : "tab"} onClick={() => setTab("campaign")}>
+          🚀 Campagne (agent)
+        </button>
         <button className={tab === "pdf" ? "tab active" : "tab"} onClick={() => setTab("pdf")}>
           Depuis un PDF
         </button>
@@ -76,6 +80,7 @@ export default function App() {
 
       {error && <div className="banner error">{error}</div>}
 
+      {tab === "campaign" && <CampaignStudio />}
       {tab === "pdf" && <IngestFlow />}
       {tab === "audio" && <AudioToolkit />}
       {tab === "design" && <DesignStudio />}
