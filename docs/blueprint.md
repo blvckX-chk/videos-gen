@@ -1,11 +1,11 @@
 # Le moteur vidéo blvckUnlimited
 
-> **Note d'architecture · v1.1** — 24 août 2026
+> **Note d'architecture · v1.2** — 28 août 2026
 > Comment le système `videos-gen` s'articule en moteur de production central — du brief client au fichier prêt à publier — et réponses, section par section, au questionnaire de cadrage.
 
 - **Établi pour** : blvckUnlimited · Cotonou
 - **Périmètre** : ComeUp · Community management · Pôles internes
-- **Statut** : cadrage — 8 décisions confirmées
+- **Statut** : 6 modules livrés · roadmap v1.2 recadrée
 
 ## Décisions confirmées
 
@@ -19,11 +19,94 @@
 | Budget fixe | **0 $ / mois** | Cœur 100 % gratuit obligatoire |
 | Modèle premium | **Pay-as-you-serve** | Coût SaaS répercuté au client |
 | Griot | **PoC en cours** | Contrat de sortie préparé côté moteur |
+| Filigrane | **Forcé sur gratuit** | Retirable : admin + premium seulement |
+| Qualité auto | **Vérification (QC)** | Contrôles avant la review humaine |
+| Review | **Avec recommandations** | Demande de modif → régénération |
+| Charte client | **Proposée si absente** | Génération après clarification |
+
+---
+
+## ★ Bilan v1.2 — ce qui est réellement construit
+
+Le blueprint v1.1 décrivait un pipeline PDF→vidéo en 6 slices. Depuis, le projet a **changé de nature** : c'est devenu un **moteur créatif multi-modal** piloté par un super-agent. Trois modules majeurs non prévus ont été livrés.
+
+| Module | Livré | Rôle |
+|---|---|---|
+| Ingestion + clarification | ✅ | PDF → type → Brief. Cases BD (XY-cut, ordre de lecture). |
+| Storyboard | ✅ | Brief + doc → plan multi-format 9:16/1:1/16:9. |
+| Rendu Remotion | ✅ | Storyboard → MP4 vertical. `tier` + compteur de coût. |
+| Audio toolkit | ✅ | Extraire / séparer voix-musique (Demucs) / remuxer. Bibliothèque. |
+| Graphic Design | ✅ | Composer + 4 templates + providers image + retrait de fond. |
+| Super-agent unifié | ✅ | Intention → campagne mixte (Reel + posts + stories + thumbnails). |
+
+> **Insight** — Le **super-agent est désormais le sommet du système**. Règle d'architecture : toute nouvelle capacité bas niveau doit devenir « plannable » par l'agent.
+
+## ! Gaps senior
+
+| # | Gap | Impact |
+|---|---|---|
+| 1 | **Les Reels sont muets** | Bloqueur UX — contenu sans son mort à la publication. → Slice 4. |
+| 2 | **Qualité non vérifiée** | Bloqueur confiance — rien ne détecte un visuel raté (texte coupé, « 2025. »). → Slice 6. |
+| 3 | **Aucune notion de client / rôle** | Bloqueur commercial — tout sort en charte blvckU, pas de filigrane différencié ni de limites. → Slices 5 & 8. |
+| 4 | **Aucune persistance** | Bloqueur opérationnel — un redémarrage perd tout l'état. → Slice 7. |
+| 5 | **Pas de review partagée** | Plan éditable oui, mais pas d'inbox globale d'approbation. → Slice 8. |
+
+> **Honnêteté** — La vérification **détecte les échecs, elle ne crée pas la qualité**. Les derniers visuels décevants venaient de données de test pauvres (PDF synthétique → « 2025. ») ET d'un besoin de polissage des templates. Le QC attrape les ratés flagrants ; la finition des templates reste un chantier continu.
+
+## § Rôles, filigrane & limites
+
+Deux axes distincts : le **rôle** (droits & limites) et le **tier de coût** (quels providers). Le rôle contraint le tier.
+
+| Rôle | Filigrane blvckUnlimited | Limites | Providers |
+|---|---|---|---|
+| **admin** (toi) | Retirable (commandes freelance) | Aucune | Tous (free + premium) |
+| **premium** | Contrôlé — retirable / remplaçable par sa charte (contrôles à définir) | Élevées | Free + premium (pay-as-you-serve) |
+| **free** | **Forcé, non-retirable** | Quota (générations/jour), pas de batch, résolution plafonnée | Gratuits uniquement |
+
+- **Filigrane forcé côté rendu** — appliqué au niveau du service (rendu vidéo + composer image), pas dans l'UI : un rôle `free` ne peut **techniquement** pas produire un livrable sans filigrane.
+- **Entitlements dérivés du rôle** — `{watermark_removable, daily_quota, max_resolution, batch_allowed, allowed_tier}` vérifiés à chaque job.
+- **Contrôles premium à définir** — probablement : retrait filigrane, filigrane personnalisé, file prioritaire, HD, providers premium facturés.
+
+> **À toi** — Précise les **quotas gratuits** (ex. 5 générations/jour ?) et la **liste des contrôles premium**. Ossature au Slice 5 ; auth complète avec la persistance (Slice 7).
+
+## ✓ Vérification & review
+
+**1. Vérification qualité automatique (QC)** — avant la review humaine. Chaque contrôle produit des drapeaux ; sous un seuil, le livrable est marqué « à revoir » et peut être régénéré automatiquement.
+
+| Contrôle | Sur | Détecte |
+|---|---|---|
+| Débordement / troncature de texte | images | texte hors cadre |
+| Cadre quasi-vide | images | composition ratée, layer manquant |
+| Contraste texte/fond | images | texte illisible (WCAG) |
+| Cohérence des données | templates | chiffre absurde, champ vide, placeholder resté |
+| Présence de piste audio | vidéos | Reel muet (gap #1) |
+| Durée & résolution | vidéos | trop court/long, mauvais ratio |
+| Filigrane présent | tous (free) | livrable gratuit sans watermark |
+
+**2. Review humaine avec recommandations** — inbox globale, trois actions :
+- **Approuver** → validé, prêt pour Griot.
+- **Demander une modification** → recommandation en langage naturel (« agrandis le titre », « le chiffre est faux ») qui repart dans l'agent/générateur → **régénération** → retour en review.
+- **Rejeter** → écarté.
+
+> **Reco** — La boucle **recommandation → régénération** est le vrai levier qualité. Les drapeaux du QC pré-remplissent des recommandations pour valider plus vite.
+
+## ◆ Charte client
+
+Chaque client/pôle porte une **charte** (palette, logo, police, ton, filigrane). Deux entrées :
+- **Charte fournie** — formulaire d'onboarding ou kit importé.
+- **Charte proposée** — si absente, le système en **génère une après clarification** : quelques questions (secteur, ambiance, 2-3 marques de référence, public) → l'agent propose **2-3 pistes** (palettes harmonisées + polices + ton) que le client choisit. La charte retenue devient la `palette` propagée dans templates + storyboard.
+
+> **Synergie** — Réutilise les **palettes par pôle** déjà en place. Génération basée sur des **règles d'harmonie** (couleurs analogues/complémentaires, contraste AA) — déterministe et gratuit — enrichie par le LLM pour le ton.
 
 ---
 
 ## Sommaire
 
+- [★ Bilan v1.2 — le construit](#-bilan-v12--ce-qui-est-réellement-construit)
+- [! Gaps senior](#-gaps-senior)
+- [§ Rôles, filigrane & limites](#-rôles-filigrane--limites)
+- [✓ Vérification & review](#-vérification--review)
+- [◆ Charte client](#-charte-client)
 - [00 — Synthèse & schéma](#00--synthèse--schéma)
 - [01 — Positionnement & clients](#01--positionnement--clients)
 - [02 — Formats couverts](#02--formats-couverts)
@@ -235,14 +318,17 @@ Griot est le maillon aval. Le moteur lui livre un **fichier déjà formaté par 
 
 | Slice | État | Détail |
 |---|---|---|
-| 1 — Ingestion & clarification | ✅ **livré** | PDF → type détecté → Brief. Extracteur de cases BD (XY-cut, ordre de lecture LTR/RTL). |
-| 2 — Storyboard multi-format | ✅ **livré** | Brief + document → storyboard JSON, multi-format 9:16/1:1/16:9. Testé : rapport 5 shots, BD 10 cases dans l'ordre de lecture. |
-| **3 — Rendu Remotion vertical + templates** | 🟡 **maintenant** | Premier MP4 9:16 : texte animé, Ken Burns sur pages/cases, sous-titres, watermark, template par pôle. Introduit le champ `tier` et le compteur de coût dès ce slice. |
-| 4 — Voix off + musique | ⏳ à venir | Kokoro (FR/EN) gratuit sur le tier free, ElevenLabs uniquement sur le tier premium, coût tracé par job. |
-| 5 — Review humaine + contrat Griot | ⏳ à venir | File d'approbation + export multi-format + **manifeste JSON de sortie** (webhook) que Griot consommera quand il sera prêt. |
-| 6 — Intégration Griot effective | ⏳ à venir | Une fois Griot opérationnel : câblage n8n + queue de publication + boucle de retour sur les performances. |
+| 1–3 — Ingestion · Storyboard · Rendu Remotion | ✅ **livré** | PDF → Brief → storyboard multi-format → MP4 vertical. Cases BD, `tier`, compteur de coût. |
+| Audio toolkit | ✅ **livré** | Extraire / séparer (Demucs) / remuxer. Bibliothèque partagée. |
+| Graphic Design + super-agent unifié | ✅ **livré** | Composer, 4 templates, providers image, retrait de fond ; agent campagne mixte. |
+| **4 — Voix off + captions + musique** | 🟡 **maintenant** | Débloque les Reels muets. Kokoro (free) + WhisperX (sous-titres alignés) + musique libre ; rail ElevenLabs premium. La voix devient un `AudioClip` réutilisable. |
+| 5 — Identité : rôles + chartes | ⏳ à venir | Rôles admin/premium/free + entitlements + filigrane forcé côté rendu. Chartes (fournie ou **proposée après clarification**) propagées. |
+| 6 — Vérification qualité (QC) | ⏳ à venir | Contrôles auto (texte tronqué, cadre vide, contraste, données absurdes, audio absent, filigrane) → drapeaux + régénération. |
+| 7 — Persistance + file | ⏳ à venir | SQLite (documents, briefs, campagnes, assets, jobs, comptes) + file arq. Ne plus rien perdre. |
+| 8 — Review queue + recommandations | ⏳ à venir | Inbox globale : approuver / **demander une modif → régénération** / rejeter. + dashboard coûts par client. |
+| 9 — Contrat Griot puis intégration | ⏳ à venir | Manifeste JSON de sortie (webhook) ; puis câblage n8n effectif quand Griot est prêt. |
 
-> **Reco** — On enchaîne sur le **Slice 3 — rendu Remotion**. C'est là qu'apparaît le premier vrai MP4 et qu'on introduit le champ `tier` et le compteur de coût dès la fondation, pour ne pas les rétro-fitter plus tard.
+> **Reco d'ordre** — On enchaîne **4 → 5 → 6**. Chacun débloque une classe distincte : **4** = crédibilité visuelle (Reels avec voix), **5** = commercialisation (onboarder un client + protéger le free), **6** = confiance (ne plus livrer un raté). Au bout des trois : un produit livrable réel.
 
 ---
 
@@ -254,6 +340,7 @@ Griot est le maillon aval. Le moteur lui livre un **fichier déjà formaté par 
 |---|---|
 | **v1** | Stack hybride, vertical prioritaire, validation humaine, deux tiers. Découpage en 6 slices. |
 | **v1.1** | Volume < 20/sem confirmé → **1 worker**. Budget fixe blvckU = **0 $** → cœur 100 % gratuit obligatoire. Modèle **pay-as-you-serve** pour le premium → introduction du champ `tier` et d'un **compteur de coût par job** dès le Slice 3. Griot en PoC → **contrat de sortie standardisé** préparé au Slice 5. |
+| **v1.2** | **Pivot super-agent créatif** : 3 modules non prévus livrés (audio, design, super-agent unifié) → l'agent devient le sommet. **5 gaps senior** identifiés. Nouvelles exigences : **rôles** admin/premium/free + **filigrane forcé** côté rendu sur le gratuit + **quotas** ; **vérification qualité** avant review ; **review avec recommandations** → régénération ; **charte client proposée** si absente. Roadmap ré-ordonnée 4→5→6→7→8→9. |
 
 ---
 
