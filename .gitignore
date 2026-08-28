@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+backend/.env
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Rendu Remotion
+remotion/node_modules/
+storage/
+
+# Divers
+.DS_Store
+*.log
