@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     replicate_api_token: str = ""
     comfyui_url: str = ""
 
+    # Voix off premium (Slice 4)
+    elevenlabs_api_key: str = ""
+
     # Serveur
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 

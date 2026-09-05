@@ -347,6 +347,41 @@ tier, revue du plan étape par étape (chaque étape retirable), toggle vidéo
 (le rendu Remotion prend plusieurs minutes), grille de livrables avec
 téléchargement.
 
+## 🎙️ Slice 4 — Voix off + sous-titres + musique (implémenté)
+
+Débloque les Reels muets. La post-production s'ajoute après le rendu Remotion,
+en une passe ffmpeg.
+
+```
+Storyboard ─▶ Remotion (MP4 muet) ─▶ Post-production ─▶ MP4 final
+                                      │
+                                      ├─ voix off (TTS par shot, alignée)
+                                      ├─ sous-titres (SRT déterministe, incrusté)
+                                      └─ musique de fond (bibliothèque, atténuée)
+```
+
+- **TTS multi-providers** (`app/voice/providers/`) :
+  - `espeak` — offline, gratuit, sans modèle (fallback / dev)
+  - `kokoro` — open-source qualité, gratuit (modèle ~330 Mo au 1er usage, VPS)
+  - `elevenlabs` — premium (accent africain via clonage), `ELEVENLABS_API_KEY`
+  - Garde-fou tier : un job `free` ne peut pas invoquer ElevenLabs.
+- **Voix alignée à la vidéo** : un segment par shot, de durée exacte (voix
+  trop longue accélérée ≤ 1.6×, trop courte complétée par du silence).
+- **Sous-titres sans ASR** : comme on génère la narration, les timings sont
+  **déterministes** (répartition par nombre de mots dans la fenêtre du shot) —
+  gratuit, offline, aucun WhisperX requis. Incrustés via ffmpeg.
+- **Musique** : n'importe quel clip de la bibliothèque audio, atténué (ducking)
+  sous la voix.
+
+### Endpoint
+`POST /api/render` accepte désormais : `narration`, `captions`,
+`voice_provider`, `music_clip_id`. `GET /api/voices` liste les providers TTS.
+
+Le super-agent (campagne) active **voix + sous-titres par défaut** sur les Reels.
+
+**UI** : options Voix off / Sous-titres / choix de voix + sélecteur de musique
+dans le bloc de rendu du storyboard.
+
 ## 🚀 Démarrage rapide
 
 ### Tout-en-un (dev)

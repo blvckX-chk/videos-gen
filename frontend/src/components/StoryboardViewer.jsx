@@ -21,7 +21,15 @@ export default function StoryboardViewer({ brief }) {
   const [renderJob, setRenderJob] = useState(null);
   const [rendering, setRendering] = useState(false);
   const [tier, setTier] = useState("free");
+  // Slice 4 — post-production
+  const [narration, setNarration] = useState(true);
+  const [captions, setCaptions] = useState(true);
+  const [voiceProvider, setVoiceProvider] = useState("");
+  const [voices, setVoices] = useState([]);
+  const [musicClip, setMusicClip] = useState(null);
   const poller = useRef(null);
+
+  useEffect(() => { api.voices().then(setVoices).catch(() => {}); }, []);
   // Post-rendu : coller une piste audio de la bibliothèque au MP4 obtenu.
   const [pickedAudio, setPickedAudio] = useState(null);
   const [mixMode, setMixMode] = useState(false);
@@ -49,7 +57,13 @@ export default function StoryboardViewer({ brief }) {
     setError(null);
     setRendering(true);
     try {
-      const j = await api.render(sb, tier);
+      const j = await api.render(sb, {
+        tier,
+        narration,
+        captions,
+        voice_provider: voiceProvider || null,
+        music_clip_id: musicClip || null,
+      });
       setRenderJob(j);
       poller.current && clearInterval(poller.current);
       poller.current = setInterval(async () => {
@@ -118,6 +132,40 @@ export default function StoryboardViewer({ brief }) {
           </div>
           <div className="render-block">
             <h4>Rendu vidéo</h4>
+
+            <div className="render-audio-opts">
+              <label className="checkbox-line">
+                <input type="checkbox" checked={narration}
+                  onChange={(e) => setNarration(e.target.checked)} disabled={rendering} />
+                <span>Voix off</span>
+              </label>
+              <label className="checkbox-line">
+                <input type="checkbox" checked={captions}
+                  onChange={(e) => setCaptions(e.target.checked)} disabled={rendering} />
+                <span>Sous-titres</span>
+              </label>
+              <label className="field small">
+                <span>Voix</span>
+                <select value={voiceProvider} onChange={(e) => setVoiceProvider(e.target.value)}
+                  disabled={rendering || !narration}>
+                  <option value="">auto (gratuit)</option>
+                  {voices.filter((v) => v.available).map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}{v.free ? "" : " · premium"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {sb && (
+              <details className="music-picker">
+                <summary>Musique de fond (optionnel)</summary>
+                <p className="muted small-text">Choisis une piste de la bibliothèque audio (atténuée sous la voix).</p>
+                <AudioLibrary mode="picker" selectedId={musicClip} onSelect={setMusicClip} />
+              </details>
+            )}
+
             <div className="render-controls">
               <div className="tier-toggle">
                 <button

@@ -114,8 +114,10 @@ async def _run_video_storyboard(step: CampaignStep, campaign: Campaign,
     sb.formats = [step.video_aspect] + [f for f in sb.formats if f != step.video_aspect]
 
     render_job = create_render_job(sb, tier=campaign.tier.value)
-    # On attend la fin (l'executor est déjà dans une tâche de fond, donc bloquer ici est OK)
-    await run_render(render_job.id, sb, assets_base_url)
+    # On attend la fin (l'executor est déjà dans une tâche de fond, donc bloquer ici est OK).
+    # Slice 4 : voix off + sous-titres activés par défaut pour les Reels de campagne.
+    await run_render(render_job.id, sb, assets_base_url, None,
+                     narration=True, captions=True)
     from ..services.jobs import get_job as get_render_job
     rj = get_render_job(render_job.id)
     if rj is None or rj.status.value != "succeeded" or not rj.video_url:

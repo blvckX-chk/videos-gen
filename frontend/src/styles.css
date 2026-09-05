@@ -187,6 +187,10 @@ button.small { padding: 5px 10px; font-size: 12px; }
 .render-status .badge.failed { background: #7f1d1d60; color: #fca5a5; }
 .render-player { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .render-player video { max-width: 320px; width: 100%; border-radius: 12px; background: #000; }
+.render-audio-opts { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 12px; }
+.render-audio-opts .field.small { min-width: 160px; }
+.music-picker { margin-bottom: 12px; }
+.music-picker summary { cursor: pointer; font-size: 13px; color: var(--muted); }
 
 /* --- Audio toolkit --- */
 .banner.warn { background: #78350f40; border: 1px solid #f59e0b; color: #fcd34d; padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; }

@@ -16,6 +16,11 @@ class RenderRequest(BaseModel):
     storyboard: Storyboard
     tier: Tier = Tier.FREE
     client_id: str | None = None
+    # Slice 4 — post-production
+    narration: bool = False
+    captions: bool = False
+    voice_provider: str | None = None
+    music_clip_id: str | None = None
 
 
 @router.post("/render", response_model=Job)
@@ -30,8 +35,18 @@ async def render(req: RenderRequest, background: BackgroundTasks, request: Reque
 
     # URL absolue vers les assets — Remotion (chromium) doit pouvoir la fetcher.
     assets_base = str(request.base_url).rstrip("/") + "/assets"
-    background.add_task(run_render, job.id, req.storyboard, assets_base)
+    background.add_task(
+        run_render, job.id, req.storyboard, assets_base, None,
+        req.narration, req.captions, req.voice_provider, req.music_clip_id,
+    )
     return job
+
+
+@router.get("/voices")
+async def voices() -> list[dict]:
+    """Providers TTS disponibles (pour l'UI du rendu)."""
+    from ..voice.providers.registry import all_tts_providers
+    return [p.info().model_dump() for p in all_tts_providers()]
 
 
 @router.get("/render/{job_id}", response_model=Job)

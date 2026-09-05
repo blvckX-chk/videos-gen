@@ -44,13 +44,14 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(brief),
     }).then(json),
-  render: (storyboard, tier = "free", client_id = null) =>
+  render: (storyboard, opts = {}) =>
     fetch(`${BASE}/render`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ storyboard, tier, client_id }),
+      body: JSON.stringify({ storyboard, tier: "free", ...opts }),
     }).then(json),
   renderStatus: (id) => fetch(`${BASE}/render/${id}`).then(json),
+  voices: () => fetch(`${BASE}/voices`).then(json),
 
   // Audio toolkit
   audio: {

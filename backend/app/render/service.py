@@ -51,7 +51,10 @@ def create_render_job(sb: Storyboard, tier: str = "free", client_id: str | None 
 
 
 async def run_render(job_id: str, sb: Storyboard, assets_base_url: str,
-                     chromium_path: str | None = None) -> None:
+                     chromium_path: str | None = None,
+                     narration: bool = False, captions: bool = False,
+                     voice_provider: str | None = None,
+                     music_clip_id: str | None = None) -> None:
     job = _JOBS.get(job_id)
     if job is None:
         return
@@ -106,7 +109,45 @@ async def run_render(job_id: str, sb: Storyboard, assets_base_url: str,
             note="rendu local (cœur gratuit)",
         ))
 
-        job.video_url = f"/renders/{out_path.name}"
+        final_path = out_path
+
+        # 5) Post-production optionnelle (Slice 4) : voix + sous-titres + musique
+        if narration or captions or music_clip_id:
+            from ..voice.service import synthesize_storyboard
+            from .postprod import postprocess
+
+            voice_track = srt_path = None
+            if narration or captions:
+                voice_track, srt_path, tts_cost = await synthesize_storyboard(
+                    sb, _output_dir(), provider_id=voice_provider,
+                    tier=Tier(job.tier.value), voice=None,
+                )
+                if tts_cost:
+                    job.costs.append(CostEntry(
+                        provider=voice_provider or "tts", kind="tts_chars",
+                        quantity=0, cost_cents=tts_cost, note="voix off premium",
+                    ))
+            # musique depuis la bibliothèque audio
+            music_path = None
+            if music_clip_id:
+                from ..audio.storage import clip_path, get_clip
+                clip = get_clip(music_clip_id)
+                if clip is not None:
+                    p = clip_path(clip.id, "mp3")
+                    if p.exists():
+                        music_path = p
+
+            if voice_track or (srt_path if captions else None) or music_path:
+                pp_out = _output_dir() / f"{job.id}_final.mp4"
+                await postprocess(
+                    out_path, pp_out,
+                    voice=voice_track if narration else None,
+                    music=music_path,
+                    srt=srt_path if captions else None,
+                )
+                final_path = pp_out
+
+        job.video_url = f"/renders/{final_path.name}"
         job.status = JobStatus.SUCCEEDED
         job.touch()
 
