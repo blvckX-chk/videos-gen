@@ -1,6 +1,6 @@
 # Le moteur vidéo blvckUnlimited
 
-> **Note d'architecture · v1.2** — 28 août 2026
+> **Note d'architecture · v1.3** — 30 août 2026
 > Comment le système `videos-gen` s'articule en moteur de production central — du brief client au fichier prêt à publier — et réponses, section par section, au questionnaire de cadrage.
 
 - **Établi pour** : blvckUnlimited · Cotonou
@@ -98,6 +98,30 @@ Chaque client/pôle porte une **charte** (palette, logo, police, ton, filigrane)
 
 > **Synergie** — Réutilise les **palettes par pôle** déjà en place. Génération basée sur des **règles d'harmonie** (couleurs analogues/complémentaires, contraste AA) — déterministe et gratuit — enrichie par le LLM pour le ton.
 
+## ⊕ Agence 360° — les 7 piliers
+
+Point senior honnête : le système est un **moteur de production multi-modal de niveau agence**. Mais une agence 360° couvre toute la chaîne, de la stratégie amont à la mesure aval. On excelle sur **1 pilier**, partiels sur **2**, il en manque **4**.
+
+| # | Pilier | Couvre | État |
+|---|---|---|---|
+| 1 | **Insight & Stratégie** | recherche, personas, positionnement, angle, plan média | ❌ manquant |
+| 2 | **Créa & Copywriting** | concept, DA, accroches, CTA, copy par plateforme | 🟡 partiel |
+| 3 | **Production** | vidéo, image, audio, motion, print | ✅ fort |
+| 4 | **Distribution** | publication, planning, multi-plateforme | 🟡 planifié |
+| 5 | **Média payant** | achat d'espace, budgets, ciblage, enchères | ❌ manquant |
+| 6 | **Mesure** | tracking, attribution, reporting, ROI | ❌ manquant |
+| 7 | **Optimisation** | A/B, boucle d'apprentissage sur les perfs | ❌ manquant |
+
+**Les 4 vrais manques :**
+- **Stratégie** — on produit depuis un document, pas depuis un **objectif business** (audience, angle, plan de canaux). → Slice 7.
+- **Copywriting publicitaire** — pas d'accroche scroll-stop + corps + CTA, ni de copy natif par plateforme, ni d'A/B. Manque le plus facile (LLM, ~0 coût), fort impact. → Slice 6.
+- **Média payant** — aucune connexion Ads Manager. Lourd (argent réel, conformité). → optionnel.
+- **Mesure + Optimisation** — on ne sait pas **ce qui marche**. C'est *le* cœur du 360° (produire → publier → mesurer → réapprendre). Dépend de Griot. → Slice 12.
+
+> **Reco** — Fort levier immédiat : **copywriting** (Slice 6) + **stratégie légère** (Slice 7), branchés sur le super-agent. Le vrai cap 360° reste la **boucle de mesure** (Slice 12), possible une fois Griot en place. Le **média payant** est optionnel (beaucoup de clients gèrent leur budget).
+>
+> **Élargissement production** (continu, briques déjà là) : bannières display multi-tailles, pubs audio/radio, landing pages, carrousels.
+
 ---
 
 ## Sommaire
@@ -107,6 +131,7 @@ Chaque client/pôle porte une **charte** (palette, logo, police, ton, filigrane)
 - [§ Rôles, filigrane & limites](#-rôles-filigrane--limites)
 - [✓ Vérification & review](#-vérification--review)
 - [◆ Charte client](#-charte-client)
+- [⊕ Agence 360° — les 7 piliers](#-agence-360--les-7-piliers)
 - [00 — Synthèse & schéma](#00--synthèse--schéma)
 - [01 — Positionnement & clients](#01--positionnement--clients)
 - [02 — Formats couverts](#02--formats-couverts)
@@ -321,14 +346,18 @@ Griot est le maillon aval. Le moteur lui livre un **fichier déjà formaté par 
 | 1–3 — Ingestion · Storyboard · Rendu Remotion | ✅ **livré** | PDF → Brief → storyboard multi-format → MP4 vertical. Cases BD, `tier`, compteur de coût. |
 | Audio toolkit | ✅ **livré** | Extraire / séparer (Demucs) / remuxer. Bibliothèque partagée. |
 | Graphic Design + super-agent unifié | ✅ **livré** | Composer, 4 templates, providers image, retrait de fond ; agent campagne mixte. |
-| **4 — Voix off + captions + musique** | 🟡 **maintenant** | Débloque les Reels muets. Kokoro (free) + WhisperX (sous-titres alignés) + musique libre ; rail ElevenLabs premium. La voix devient un `AudioClip` réutilisable. |
-| 5 — Identité : rôles + chartes | ⏳ à venir | Rôles admin/premium/free + entitlements + filigrane forcé côté rendu. Chartes (fournie ou **proposée après clarification**) propagées. |
-| 6 — Vérification qualité (QC) | ⏳ à venir | Contrôles auto (texte tronqué, cadre vide, contraste, données absurdes, audio absent, filigrane) → drapeaux + régénération. |
-| 7 — Persistance + file | ⏳ à venir | SQLite (documents, briefs, campagnes, assets, jobs, comptes) + file arq. Ne plus rien perdre. |
-| 8 — Review queue + recommandations | ⏳ à venir | Inbox globale : approuver / **demander une modif → régénération** / rejeter. + dashboard coûts par client. |
-| 9 — Contrat Griot puis intégration | ⏳ à venir | Manifeste JSON de sortie (webhook) ; puis câblage n8n effectif quand Griot est prêt. |
+| 4 — Voix off + sous-titres + musique | ✅ **livré** | Post-production ffmpeg : TTS (espeak/Kokoro/ElevenLabs) aligné par shot + SRT déterministe incrusté + musique atténuée. |
+| **5 — Identité : rôles + chartes** | 🟡 **maintenant** | Rôles admin/premium/free + entitlements + filigrane forcé côté rendu. Chartes (fournie ou **proposée après clarification**) propagées. |
+| 6 — Copywriting `[360° · pilier 2]` | ⏳ nouveau | Accroche + corps + CTA + hashtags **par plateforme**, variantes A/B, depuis brief/document. LLM, quasi gratuit. |
+| 7 — Stratégie `[360° · pilier 1]` | ⏳ nouveau | Objectif business → persona → angle → plan de canaux, qui **pilote** la campagne. |
+| 8 — Vérification qualité (QC) | ⏳ à venir | Contrôles auto (texte tronqué, cadre vide, contraste, données absurdes, audio absent, filigrane) → drapeaux + régénération. |
+| 9 — Persistance + file | ⏳ à venir | SQLite (documents, briefs, campagnes, assets, jobs, comptes) + file arq. Ne plus rien perdre. |
+| 10 — Review queue + recommandations | ⏳ à venir | Inbox globale : approuver / **demander une modif → régénération** / rejeter. + dashboard coûts par client. |
+| 11 — Distribution : contrat Griot + intégration | ⏳ à venir | Manifeste JSON de sortie (webhook) ; puis câblage n8n effectif quand Griot est prêt. |
+| 12 — Mesure & optimisation `[360° · piliers 6-7]` | ⏳ nouveau | Métriques via Griot (vues, clics, conversions) → dashboard client + **boucle d'apprentissage**. Le vrai cap 360°. |
+| Média payant `[360° · pilier 5]` | ⏳ optionnel | Connecteur Meta/TikTok/Google Ads. Lourd, argent réel, conformité. Selon demande. |
 
-> **Reco d'ordre** — On enchaîne **4 → 5 → 6**. Chacun débloque une classe distincte : **4** = crédibilité visuelle (Reels avec voix), **5** = commercialisation (onboarder un client + protéger le free), **6** = confiance (ne plus livrer un raté). Au bout des trois : un produit livrable réel.
+> **Reco d'ordre** — On enchaîne **5 → 6 → 7** : **5** = commercialisation (onboarder + protéger le free), **6** = copywriting (fort levier, quasi gratuit, comble le pilier 2), **7** = stratégie (comble le pilier 1). Puis QC/persistance/review consolident, et la **mesure (12)** ferme la boucle 360° une fois Griot en place.
 
 ---
 
@@ -341,6 +370,7 @@ Griot est le maillon aval. Le moteur lui livre un **fichier déjà formaté par 
 | **v1** | Stack hybride, vertical prioritaire, validation humaine, deux tiers. Découpage en 6 slices. |
 | **v1.1** | Volume < 20/sem confirmé → **1 worker**. Budget fixe blvckU = **0 $** → cœur 100 % gratuit obligatoire. Modèle **pay-as-you-serve** pour le premium → introduction du champ `tier` et d'un **compteur de coût par job** dès le Slice 3. Griot en PoC → **contrat de sortie standardisé** préparé au Slice 5. |
 | **v1.2** | **Pivot super-agent créatif** : 3 modules non prévus livrés (audio, design, super-agent unifié) → l'agent devient le sommet. **5 gaps senior** identifiés. Nouvelles exigences : **rôles** admin/premium/free + **filigrane forcé** côté rendu sur le gratuit + **quotas** ; **vérification qualité** avant review ; **review avec recommandations** → régénération ; **charte client proposée** si absente. Roadmap ré-ordonnée 4→5→6→7→8→9. |
+| **v1.3** | **Cap agence 360°** : Slice 4 (voix + sous-titres) livré. Analyse des **7 piliers** → production forte, manquent l'amont (stratégie, copy) et l'aval (mesure, optimisation, média payant). Nouveaux slices : **Copywriting** (6), **Stratégie** (7), **Mesure & optimisation** (12). Média payant optionnel. Roadmap étendue à 12 slices. |
 
 ---
 
