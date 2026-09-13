@@ -37,7 +37,7 @@
 16. Interconnexion écosystème (Griot, pôles, Academy)
 17. Roadmap & piliers 360°
 18. Risques & mitigations
-19. Conformité, éthique & légal
+19. Conformité, éthique & légal — dont **19.1 Copyright & propriété intellectuelle**
 20. KPIs & critères d'acceptation
 21. Glossaire
 22. Annexes (Naming, hypothèses ouvertes)
@@ -492,6 +492,23 @@ KORA n'est pas seul : il est le **moteur créatif** d'un écosystème.
 - **Verticaux sensibles** (santé, finance, politique) — écartés au démarrage.
 - **Données personnelles** — rétention limitée, purge, chiffrement (posture RGPD-like).
 - **Process en cas d'échec qualité** — régénération gratuite → refonte manuelle → remboursement en dernier recours (CGV).
+
+### 19.1 Copyright & propriété intellectuelle *(pilier à part entière)*
+
+La PI est un enjeu central d'un outil génératif : droits sur les entrées, statut des sorties, risque de contrefaçon, licences des ressources. KORA la traite comme un sous-système, pas une clause.
+
+- **EF-PI-1** (P1) **Droits sur les entrées** — à l'upload d'un document/rush, le client atteste détenir les droits (case à cocher + horodatage conservé). Le système refuse de traiter un contenu marqué comme non autorisé.
+- **EF-PI-2** (P1) **Droits sur les sorties / cession** — le contenu produit pour un client lui est cédé selon les CGV. La cession et son périmètre sont enregistrés par livrable.
+- **EF-PI-3** (P1) **Suivi des licences par asset** — chaque ressource (musique, police, image stock, modèle génératif) porte sa licence et ses restrictions (ex. usage non-commercial). Un asset non-commercial est **techniquement bloqué** sur une commande commerciale.
+- **EF-PI-4** (P1) **Provenance & Content Credentials** — chaque livrable trace son origine (agents, providers, modèles, coûts) ; perspective **C2PA** pour marquer l'origine IA de façon vérifiable.
+- **EF-PI-5** (P2) **Détection de similarité / anti-contrefaçon** — contrôle qu'un visuel généré ne reproduit pas de façon trop proche une œuvre existante (logo, marque, œuvre protégée) ; drapeau en review.
+- **EF-PI-6** (P2) **Preuve d'antériorité** — horodatage et empreinte (hash) de chaque création, registre consultable (preuve de date de création).
+- **EF-PI-7** (P2) **Registre des droits par livrable** — qui possède quoi, sous quelle licence, avec quelle échéance ; exportable pour un litige.
+- **EF-PI-8** (P3) **Gestion des droits à l'image** — pour tout visage réel (rush client, avatar), conservation d'une autorisation/consentement liée à l'asset.
+
+> **Nuance juridique importante (à porter aux CGV)** : dans plusieurs juridictions, une œuvre **purement générée par IA** (sans apport créatif humain suffisant) **n'est pas protégeable par le droit d'auteur**. La valeur défendable de KORA vient de l'**apport humain** (direction, sélection, montage, recommandations de modification) — ce qui renforce, au passage, le positionnement « IA augmentée » plutôt que « IA autonome ». À faire valider par un juriste selon les marchés visés (Bénin/OAPI, France/UE, US).
+
+> **Frontière Griot** : la PI relève de **KORA** (création). Griot n'entre en jeu que côté diffusion (droits de publication, conformité plateformes au post) — à cadrer dans son propre périmètre.
 
 ---
 
