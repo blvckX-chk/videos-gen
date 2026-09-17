@@ -35,6 +35,31 @@ def _output_dir() -> Path:
     return d
 
 
+def _apply_brand(sb: Storyboard, role: str | None, charte_id: str | None,
+                 remove_watermark: bool, watermark_text: str | None) -> Storyboard:
+    """Applique la charte (palette) et décide du filigrane selon le rôle.
+    Un rôle `free` ne peut pas retirer le filigrane (garde-fou côté service)."""
+    from ..identity.charters import get_charte
+    from ..identity.entitlements import decide_watermark, resolve_entitlements
+
+    ent = resolve_entitlements(role)
+    out = sb.model_copy(deep=True)
+    brand: dict = {"name": "blvckUnlimited"}
+
+    if charte_id:
+        charte = get_charte(charte_id)
+        if charte is not None:
+            brand["palette"] = charte.palette
+            if charte.watermark_text:
+                watermark_text = watermark_text or charte.watermark_text
+
+    show, text = decide_watermark(ent, remove_watermark, watermark_text)
+    brand["show_watermark"] = show
+    brand["watermark"] = text or "blvckUnlimited"
+    out.brand = brand
+    return out
+
+
 def create_render_job(sb: Storyboard, tier: str = "free", client_id: str | None = None) -> Job:
     from ..models import Tier
     job = Job(
@@ -54,7 +79,11 @@ async def run_render(job_id: str, sb: Storyboard, assets_base_url: str,
                      chromium_path: str | None = None,
                      narration: bool = False, captions: bool = False,
                      voice_provider: str | None = None,
-                     music_clip_id: str | None = None) -> None:
+                     music_clip_id: str | None = None,
+                     role: str | None = None,
+                     charte_id: str | None = None,
+                     remove_watermark: bool = False,
+                     watermark_text: str | None = None) -> None:
     job = _JOBS.get(job_id)
     if job is None:
         return
@@ -68,6 +97,9 @@ async def run_render(job_id: str, sb: Storyboard, assets_base_url: str,
     try:
         job.status = JobStatus.RUNNING
         job.touch()
+
+        # 0) Marque : charte + filigrane selon les droits du rôle (Slice 5)
+        sb = _apply_brand(sb, role, charte_id, remove_watermark, watermark_text)
 
         # 1) Préparer les assets (pages/cases → JPEG dans storage/assets/…)
         sb_ready = prepare_assets(doc, sb, assets_base_url)

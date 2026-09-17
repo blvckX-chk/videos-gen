@@ -21,10 +21,15 @@ export default function CampaignStudio() {
   const [job, setJob] = useState(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState(null);
+  // Slice 5 — marque
+  const [chartes, setChartes] = useState([]);
+  const [charteId, setCharteId] = useState("");
+  const [removeWatermark, setRemoveWatermark] = useState(false);
   const poller = useRef(null);
 
   useEffect(() => {
     fetch("/api/documents").then((r) => r.json()).then(setDocuments).catch(() => {});
+    api.identity.chartes().then(setChartes).catch(() => {});
     return () => poller.current && clearInterval(poller.current);
   }, []);
 
@@ -33,7 +38,7 @@ export default function CampaignStudio() {
     setError(null); setPlanning(true); setPlan(null); setJob(null);
     try {
       const p = await api.campaign.plan({
-        intent, document_id: docId || null, tier,
+        intent, document_id: docId || null, tier, charte_id: charteId || null,
       });
       setPlan(p);
     } catch (e) { setError(e.message); }
@@ -52,7 +57,11 @@ export default function CampaignStudio() {
     }
     setError(null); setRunning(true);
     try {
-      const j = await api.campaign.run({ campaign: toRun });
+      const j = await api.campaign.run({
+        campaign: toRun,
+        charte_id: charteId || null,
+        remove_watermark: removeWatermark,
+      });
       setJob(j);
       poller.current && clearInterval(poller.current);
       poller.current = setInterval(async () => {
@@ -102,6 +111,18 @@ export default function CampaignStudio() {
           <button className={`chip ${tier === "free" ? "active" : ""}`} onClick={() => setTier("free")}>Free</button>
           <button className={`chip ${tier === "premium" ? "active" : ""}`} onClick={() => setTier("premium")}>Premium</button>
         </div>
+        <label className="field small">
+          <span>Charte</span>
+          <select value={charteId} onChange={(e) => setCharteId(e.target.value)}>
+            <option value="">blvckUnlimited (défaut)</option>
+            {chartes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </label>
+        <label className="checkbox-line" title="Disponible pour admin/premium">
+          <input type="checkbox" checked={removeWatermark}
+            onChange={(e) => setRemoveWatermark(e.target.checked)} />
+          <span>Retirer le filigrane</span>
+        </label>
       </div>
 
       <button className="ghost" onClick={propose} disabled={planning || !intent.trim()}>

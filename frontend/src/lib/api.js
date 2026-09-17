@@ -1,6 +1,17 @@
 // Petit client pour l'API backend.
 const BASE = "/api";
 
+// Rôle courant (Slice 5) — envoyé en en-tête X-Role. Défaut admin (« moi d'abord »).
+export function getRole() {
+  try { return localStorage.getItem("bu-role") || "admin"; } catch { return "admin"; }
+}
+export function setRole(r) {
+  try { localStorage.setItem("bu-role", r); } catch { /* ignore */ }
+}
+function roleHeaders(extra = {}) {
+  return { "X-Role": getRole(), ...extra };
+}
+
 async function json(res) {
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
@@ -47,11 +58,31 @@ export const api = {
   render: (storyboard, opts = {}) =>
     fetch(`${BASE}/render`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: roleHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ storyboard, tier: "free", ...opts }),
     }).then(json),
   renderStatus: (id) => fetch(`${BASE}/render/${id}`).then(json),
   voices: () => fetch(`${BASE}/voices`).then(json),
+
+  // Identité & marque (Slice 5)
+  identity: {
+    me: () => fetch(`${BASE}/identity/me`, { headers: roleHeaders() }).then(json),
+    chartes: () => fetch(`${BASE}/identity/chartes`).then(json),
+    createCharte: (charte) =>
+      fetch(`${BASE}/identity/chartes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(charte),
+      }).then(json),
+    deleteCharte: (id) =>
+      fetch(`${BASE}/identity/chartes/${id}`, { method: "DELETE" }).then(json),
+    proposeChartes: (req) =>
+      fetch(`${BASE}/identity/chartes/propose`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req),
+      }).then(json),
+  },
 
   // Audio toolkit
   audio: {
@@ -145,13 +176,13 @@ export const api = {
     plan: (payload) =>
       fetch(`${BASE}/campaign/plan`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: roleHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       }).then(json),
     run: (payload) =>
       fetch(`${BASE}/campaign/run`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: roleHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       }).then(json),
     job: (id) => fetch(`${BASE}/campaign/jobs/${id}`).then(json),

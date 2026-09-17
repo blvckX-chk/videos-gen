@@ -28,7 +28,19 @@ const RENDERERS: Record<
 // Rendu principal : chaque shot est monté dans une Sequence de longueur = durée.
 export const VideoComp: React.FC<{ storyboard: Storyboard }> = ({ storyboard }) => {
   const { fps } = useVideoConfig();
-  const template = pickTemplate(storyboard.template);
+  const base = pickTemplate(storyboard.template);
+  // Surcharge de charte (Slice 5) : la palette de marque prime sur le template.
+  const pal = storyboard.brand?.palette ?? {};
+  const template = {
+    ...base,
+    bg: pal.bg1 ?? base.bg,
+    bgAccent: pal.bg2 ?? base.bgAccent,
+    fg: pal.fg ?? base.fg,
+    muted: pal.muted ?? base.muted,
+    accent: pal.accent ?? base.accent,
+  };
+  const showWatermark = storyboard.brand?.show_watermark !== false;
+  const watermarkText = storyboard.brand?.watermark ?? template.brandName;
 
   const shots: Shot[] = storyboard.scenes.flatMap((s) => s.shots);
   let cursor = 0;
@@ -47,34 +59,36 @@ export const VideoComp: React.FC<{ storyboard: Storyboard }> = ({ storyboard }) 
         );
       })}
 
-      {/* Watermark permanent, discret en bas. */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 44,
-          left: 0,
-          right: 0,
-          display: "flex",
-          justifyContent: "center",
-          pointerEvents: "none",
-        }}
-      >
+      {/* Watermark — retirable selon les droits du rôle (Slice 5). */}
+      {showWatermark && (
         <div
           style={{
-            fontFamily: template.fontBody,
-            color: template.muted,
-            fontSize: 22,
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            padding: "8px 18px",
-            borderRadius: 999,
-            background: "rgba(0,0,0,0.35)",
-            border: `1px solid ${template.accent}66`,
+            position: "absolute",
+            bottom: 44,
+            left: 0,
+            right: 0,
+            display: "flex",
+            justifyContent: "center",
+            pointerEvents: "none",
           }}
         >
-          {storyboard.brand?.watermark ?? template.brandName}
+          <div
+            style={{
+              fontFamily: template.fontBody,
+              color: template.muted,
+              fontSize: 22,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              padding: "8px 18px",
+              borderRadius: 999,
+              background: "rgba(0,0,0,0.35)",
+              border: `1px solid ${template.accent}66`,
+            }}
+          >
+            {watermarkText}
+          </div>
         </div>
-      </div>
+      )}
     </AbsoluteFill>
   );
 };

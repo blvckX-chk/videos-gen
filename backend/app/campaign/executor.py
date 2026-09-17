@@ -58,17 +58,36 @@ def _brief_from_step(step: CampaignStep, document_id: str) -> Brief:
     )
 
 
-async def _run_image_template(step: CampaignStep,
-                              watermark: str | None) -> Deliverable:
+def _brand_context(campaign: Campaign) -> dict:
+    """Résout palette de charte + décision de filigrane selon le rôle (Slice 5)."""
+    from ..identity.charters import get_charte
+    from ..identity.entitlements import decide_watermark, resolve_entitlements
+
+    ent = resolve_entitlements(campaign.role)
+    palette = None
+    wm_text = campaign.watermark_text
+    if campaign.charte_id:
+        charte = get_charte(campaign.charte_id)
+        if charte is not None:
+            palette = charte.palette
+            wm_text = wm_text or charte.watermark_text
+    show, text = decide_watermark(ent, campaign.remove_watermark, wm_text)
+    return {"palette": palette, "watermark_show": show, "watermark_text": text}
+
+
+async def _run_image_template(step: CampaignStep, brand: dict) -> Deliverable:
     if not step.template:
         raise RuntimeError("template manquant sur une étape image_template.")
     params = dict(step.params)
     # Injecte le format si absent
     params.setdefault("format", step.image_format.value)
+    # Applique la palette de charte si présente
+    if brand.get("palette"):
+        params.setdefault("palette", brand["palette"])
     comp = build_template(step.template, params)
     img = compose(comp)
-    if watermark:
-        img = apply_watermark(img, watermark)
+    if brand.get("watermark_show"):
+        img = apply_watermark(img, brand.get("watermark_text") or "blvckUnlimited")
     asset = _asset_from_image(
         img, name=step.label, kind=AssetKind.COMPOSED,
         format=str(comp.format),
@@ -115,9 +134,12 @@ async def _run_video_storyboard(step: CampaignStep, campaign: Campaign,
 
     render_job = create_render_job(sb, tier=campaign.tier.value)
     # On attend la fin (l'executor est déjà dans une tâche de fond, donc bloquer ici est OK).
-    # Slice 4 : voix off + sous-titres activés par défaut pour les Reels de campagne.
+    # Slice 4 : voix + sous-titres par défaut. Slice 5 : charte + filigrane par rôle.
     await run_render(render_job.id, sb, assets_base_url, None,
-                     narration=True, captions=True)
+                     narration=True, captions=True,
+                     role=campaign.role, charte_id=campaign.charte_id,
+                     remove_watermark=campaign.remove_watermark,
+                     watermark_text=campaign.watermark_text)
     from ..services.jobs import get_job as get_render_job
     rj = get_render_job(render_job.id)
     if rj is None or rj.status.value != "succeeded" or not rj.video_url:
@@ -130,8 +152,7 @@ async def _run_video_storyboard(step: CampaignStep, campaign: Campaign,
 
 
 async def execute_campaign(job: CampaignJob, campaign: Campaign,
-                            assets_base_url: str,
-                            watermark: str | None = "blvckUnlimited") -> None:
+                            assets_base_url: str) -> None:
     """Exécute toutes les étapes de la campagne, tolérant aux échecs partiels."""
     job.status = CampaignJobStatus.RUNNING
     job.steps_total = len(campaign.steps)
@@ -139,10 +160,12 @@ async def execute_campaign(job: CampaignJob, campaign: Campaign,
     from .storage import save_job
     save_job(job)
 
+    brand = _brand_context(campaign)  # palette charte + décision filigrane (par rôle)
+
     for i, step in enumerate(campaign.steps):
         try:
             if step.type == StepType.IMAGE_TEMPLATE:
-                deliv = await _run_image_template(step, watermark)
+                deliv = await _run_image_template(step, brand)
             elif step.type == StepType.IMAGE_GENERATE:
                 deliv = await _run_image_generate(step, campaign.tier)
             elif step.type == StepType.VIDEO_STORYBOARD:

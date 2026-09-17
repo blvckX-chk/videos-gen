@@ -62,6 +62,10 @@ class Storyboard(BaseModel):
     language: str = "fr"
     scenes: list[Scene] = []
     generator: str = "rule_based"         # rule_based | anthropic | openai
+    #: surcharge de marque appliquée au rendu (charte + filigrane), remplie par
+    #: le service de rendu selon la charte choisie et les droits du rôle.
+    #: {name, watermark, show_watermark, palette:{bg1,bg2,fg,muted,accent,accent2}}
+    brand: Optional[dict] = None
 
     @property
     def total_duration(self) -> float:

@@ -79,6 +79,11 @@ class Campaign(BaseModel):
     tier: Tier = Tier.FREE
     generator: str = "rule_based"           # rule_based | anthropic | openai
     steps: list[CampaignStep] = []
+    # Slice 5 — marque : charte + filigrane (selon le rôle)
+    charte_id: Optional[str] = None
+    role: Optional[str] = None
+    remove_watermark: bool = False
+    watermark_text: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

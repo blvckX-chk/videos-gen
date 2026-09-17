@@ -41,9 +41,18 @@ export type Storyboard = {
   template: string;
   language: string;
   scenes: Scene[];
-  // Métadonnées visuelles ajoutées par le backend au moment du rendu.
+  // Métadonnées de marque ajoutées par le backend au rendu (charte + filigrane).
   brand?: {
-    name: string;
+    name?: string;
     watermark?: string;
+    show_watermark?: boolean;
+    palette?: {
+      bg1?: string;
+      bg2?: string;
+      fg?: string;
+      muted?: string;
+      accent?: string;
+      accent2?: string;
+    };
   };
 };

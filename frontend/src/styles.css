@@ -296,3 +296,12 @@ audio { filter: invert(0.92) hue-rotate(180deg); }
 .cp-errors { margin-top: 14px; }
 .cp-errors summary { cursor: pointer; color: #fca5a5; font-size: 13px; }
 .cp-errors ul { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: var(--muted); }
+
+/* --- Identité & chartes (Slice 5) --- */
+.charte-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-top: 12px; }
+.charte-card { border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.charte-name { font-weight: 700; font-size: 14px; }
+.charte-tone { font-size: 12px; font-style: italic; }
+.pal-swatches { display: flex; gap: 4px; }
+.pal-swatches span { width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); }
+.charte-card .primary, .charte-card .ghost { margin-top: 4px; align-self: flex-start; }

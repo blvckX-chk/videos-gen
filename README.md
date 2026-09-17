@@ -382,6 +382,39 @@ Le super-agent (campagne) active **voix + sous-titres par défaut** sur les Reel
 **UI** : options Voix off / Sous-titres / choix de voix + sélecteur de musique
 dans le bloc de rendu du storyboard.
 
+## 🎛️ Slice 5 — Identité : rôles + filigrane + chartes (implémenté)
+
+Protège le modèle gratuit et débloque l'onboarding client. Pensé « admin
+d'abord » : par défaut tu es **admin**, accès total, aucune limite.
+
+- **Rôles & entitlements** (`app/identity/`) : `admin` / `premium` / `free`.
+  Droits dérivés du rôle (`Entitlements`) vérifiés à chaque job. Rôle courant
+  via en-tête `X-Role` (défaut **admin**) — l'auth par compte viendra au Slice 7.
+- **Filigrane appliqué côté service** (rendu vidéo + composer image) :
+  - `free` → filigrane blvckUnlimited **forcé, non-retirable** ;
+  - `admin` / `premium` → **retirable** ou **personnalisable** (logo/nom client).
+  Un `free` ne peut techniquement pas produire un livrable sans filigrane.
+- **Le rôle contraint le tier** : un `free` ne peut pas invoquer un provider premium.
+- **Chartes de marque** : palette + logo + police + ton + filigrane, propagées
+  dans le design **et** le rendu vidéo (via `storyboard.brand`).
+  - **Charte fournie** (formulaire) ou **proposée après clarification** :
+    3 pistes de palettes harmonieuses (théorie des couleurs, déterministe et
+    gratuit) selon secteur / ambiance / nom.
+
+### Endpoints
+| Méthode | Route | Rôle |
+|--------|-------|------|
+| GET | `/api/identity/me` | Rôle courant + droits (en-tête `X-Role`) |
+| GET/POST/DELETE | `/api/identity/chartes` | Gérer les chartes |
+| POST | `/api/identity/chartes/propose` | Proposer 3 chartes après clarification |
+
+`/api/render` et `/api/campaign/*` acceptent désormais `charte_id`,
+`remove_watermark`, `watermark_text` et lisent `X-Role`.
+
+**UI** : onglet **🎛️ Identité** (bascule de rôle, gestion et proposition de
+chartes) + sélecteur de charte et bascule « retirer le filigrane » dans la
+campagne.
+
 ## 🚀 Démarrage rapide
 
 ### Tout-en-un (dev)
