@@ -152,6 +152,7 @@ Conformément à ta consigne, les fonctions suivantes ne sont **pas** développ�
 | **Adaptation finale de la caption/hashtags au moment du post** | KORA *crée* le copy ; Griot l'*ajuste et le poste* selon les codes de chaque plateforme. |
 | **Community management** (réponses aux commentaires, DM, modération) | Relationnel temps réel = domaine de Griot. |
 | **Collecte brute des métriques plateformes** (vues, likes, clics) | Griot est connecté aux API ; il transmet les données à KORA. |
+| **Collecte des signaux de tendance** (Trend Radar — formats/sons/angles montants) | Griot = les yeux (collecte) ; KORA = le cerveau créatif (interprétation). Voir §9.14. |
 
 **Zone grise à trancher (2 questions ouvertes — voir Annexe B) :** l'**intelligence d'analyse/optimisation** (KORA la garde, Griot fournit la donnée brute) et le **média payant** (Griot ? module dédié ? à définir).
 
@@ -300,6 +301,22 @@ Cadre directeur (inspiré des niveaux de conduite autonome) qui structure la mon
 - **EF-MES-1** (P2) Stocker et agréger les métriques par campagne, client, période.
 - **EF-MES-2** (P2) Tableau de bord de performance par client.
 - **EF-MES-3** (P3) **Boucle d'apprentissage** : identifier ce qui performe et le réinjecter dans la stratégie et le copy.
+
+### 9.14 Trend Radar — veille créative *(rend l'amont proactif)*
+
+Rend KORA **proactif** : au lieu de produire « une campagne pour ce document », il produit « une campagne **dans le format qui performe en ce moment** pour ce secteur ». Répartition confirmée : **Griot collecte les signaux bruts, KORA les interprète en direction créative.**
+
+- **EF-TRD-1** (P1) Consommer des **signaux de tendance** (formats, accroches, sons, angles montants) fournis par Griot ou une source configurée.
+- **EF-TRD-2** (P1) **Interpréter** ces signaux en recommandations créatives concrètes (format à privilégier, structure d'accroche, durée, ton) pour la Stratégie et le Copy.
+- **EF-TRD-3** (P1) **Phase 1 (interne, gratuit)** : dériver les tendances de **nos propres performances** (boucle de mesure) + une **bibliothèque de formats/accroches** curée + la connaissance du LLM. Fonctionne sans aucune source externe.
+- **EF-TRD-4** (P2) **Phase 2** : intégrer des signaux publics légers (surfaces « trending » officielles, veille assistée).
+- **EF-TRD-5** (P3) **Phase 3** : brancher une API de tendances payante (répercutée au tier premium).
+- **EF-TRD-6** (P2) Horodater les tendances (une tendance est périssable) et signaler leur fraîcheur au moment de la recommandation.
+- **EF-TRD-7** (P2) Pondérer tendance **globale** vs performance **propre au client** (souvent plus pertinente) et l'expliquer dans la recommandation (traçabilité).
+
+> **Vérité senior : l'agent est facile, la donnée est le nerf de la guerre.** Les API officielles sont limitées, le scraping est contre les CGU (risque légal), les API de tendances coûtent. D'où le **phasage** : la Phase 1 (apprendre de nos propres résultats) est déjà puissante et gratuite ; l'externe vient ensuite, via Griot, quand c'est légalement et économiquement soutenable.
+>
+> **Frontière Griot : Griot = les yeux (collecte), KORA = le cerveau créatif (interprétation).**
 
 ---
 
@@ -462,9 +479,10 @@ KORA n'est pas seul : il est le **moteur créatif** d'un écosystème.
 | 10 Review + recommandations | Confiance | ⏳ |
 | 11 Distribution : contrat Griot | Pilier 4 | ⏳ |
 | 12 **Mesure & optimisation** | Piliers 6-7 | ⏳ |
+| 13 **Trend Radar** (Griot collecte / KORA interprète) | Amont proactif | ⏳ (Phase 1 interne dès la mesure) |
 | Média payant | Pilier 5 | ⏳ optionnel |
 
-**Ordre recommandé : 5 → 6 → 7**, puis consolidation (8-10), puis la boucle 360° (11-12).
+**Ordre recommandé : 5 → 6 → 7**, puis consolidation (8-10), puis la boucle 360° (11-12) et le Trend Radar (13, Phase 1 gratuite dès que la mesure existe).
 
 ---
 
