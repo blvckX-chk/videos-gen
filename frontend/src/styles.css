@@ -305,3 +305,17 @@ audio { filter: invert(0.92) hue-rotate(180deg); }
 .pal-swatches { display: flex; gap: 4px; }
 .pal-swatches span { width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); }
 .charte-card .primary, .charte-card .ghost { margin-top: 4px; align-self: flex-start; }
+
+/* --- Copywriting (Slice 6) --- */
+.platforms-pick { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.copy-result { margin-top: 18px; }
+.copy-platform { margin-bottom: 20px; }
+.copy-platform h3 { margin: 0 0 8px; font-size: 15px; }
+.copy-variants { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.copy-card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+.copy-head { display: flex; justify-content: space-between; align-items: center; }
+.copy-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); font-weight: 700; }
+.copy-hook { font-weight: 700; font-size: 14px; margin: 0; }
+.copy-body { font-size: 13px; margin: 0; color: var(--text); line-height: 1.4; }
+.copy-cta { font-size: 13px; margin: 0; color: var(--accent, #6d5efc); font-weight: 600; }
+.copy-tags { font-size: 12px; margin: 0; color: var(--accent-2, #22d3ee); }

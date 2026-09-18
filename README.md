@@ -382,6 +382,30 @@ Le super-agent (campagne) active **voix + sous-titres par défaut** sur les Reel
 **UI** : options Voix off / Sous-titres / choix de voix + sélecteur de musique
 dans le bloc de rendu du storyboard.
 
+## ✍️ Slice 6 — Copywriting (implémenté)
+
+Pilier 360° n°2. L'agent rédige un copy **natif par plateforme** (le ton
+TikTok ≠ LinkedIn ≠ pub Meta), en **variantes A/B**, depuis une intention ou
+un document, dans la **voix de marque** (ton de la charte).
+
+- **Module** `app/copy/` — specs par plateforme (ton, style de CTA, hashtags) ;
+  mode `rule_based` gratuit (gabarits + points clés du document) + LLM
+  (Claude/OpenAI) avec repli automatique.
+- **Sortie par variante** : accroche scroll-stop, corps, CTA, hashtags.
+- **Plateformes** : TikTok, Instagram, YouTube Shorts, Facebook, LinkedIn,
+  Publicité Meta.
+- **Frontière Griot** : KORA *crée* le copy ; l'ajustement final et la
+  publication restent à Griot.
+
+### Endpoints
+| Méthode | Route | Rôle |
+|--------|-------|------|
+| GET | `/api/copy/platforms` | Plateformes supportées |
+| POST | `/api/copy` | Génère le copy (intention/document → variantes A/B par plateforme) |
+
+**UI** : onglet **✍️ Copywriting** — intention/document, ton, choix des
+plateformes, nombre de variantes, cartes copiables en un clic.
+
 ## 🎛️ Slice 5 — Identité : rôles + filigrane + chartes (implémenté)
 
 Protège le modèle gratuit et débloque l'onboarding client. Pensé « admin

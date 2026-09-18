@@ -472,7 +472,7 @@ KORA n'est pas seul : il est le **moteur créatif** d'un écosystème.
 | Audio toolkit · Design · Super-agent | Production | ✅ |
 | 4 Voix off + sous-titres + musique | Production | ✅ |
 | **5 Identité : rôles + filigrane + chartes** | Cross-cutting | ✅ |
-| 6 **Copywriting** (par plateforme, A/B) | Pilier 2 | ⏳ |
+| 6 **Copywriting** (par plateforme, A/B) | Pilier 2 | ✅ |
 | 7 **Stratégie** (objectif→persona→angle→canaux) | Pilier 1 | ⏳ |
 | 8 Vérification qualité (QC) | Confiance | ⏳ |
 | 9 Persistance + file | Opérationnel | ⏳ |

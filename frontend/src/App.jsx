@@ -7,6 +7,7 @@ import AudioToolkit from "./components/AudioToolkit.jsx";
 import DesignStudio from "./components/DesignStudio.jsx";
 import CampaignStudio from "./components/CampaignStudio.jsx";
 import IdentityStudio from "./components/IdentityStudio.jsx";
+import CopyStudio from "./components/CopyStudio.jsx";
 
 export default function App() {
   const [providers, setProviders] = useState([]);
@@ -77,6 +78,9 @@ export default function App() {
         <button className={tab === "design" ? "tab active" : "tab"} onClick={() => setTab("design")}>
           🎨 Graphic design
         </button>
+        <button className={tab === "copy" ? "tab active" : "tab"} onClick={() => setTab("copy")}>
+          ✍️ Copywriting
+        </button>
         <button className={tab === "identity" ? "tab active" : "tab"} onClick={() => setTab("identity")}>
           🎛️ Identité
         </button>
@@ -88,6 +92,7 @@ export default function App() {
       {tab === "pdf" && <IngestFlow />}
       {tab === "audio" && <AudioToolkit />}
       {tab === "design" && <DesignStudio />}
+      {tab === "copy" && <CopyStudio />}
       {tab === "identity" && <IdentityStudio />}
 
       {tab === "prompt" && (

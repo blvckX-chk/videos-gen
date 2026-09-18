@@ -64,6 +64,17 @@ export const api = {
   renderStatus: (id) => fetch(`${BASE}/render/${id}`).then(json),
   voices: () => fetch(`${BASE}/voices`).then(json),
 
+  // Copywriting (Slice 6)
+  copy: {
+    platforms: () => fetch(`${BASE}/copy/platforms`).then(json),
+    generate: (req) =>
+      fetch(`${BASE}/copy`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req),
+      }).then(json),
+  },
+
   // Identité & marque (Slice 5)
   identity: {
     me: () => fetch(`${BASE}/identity/me`, { headers: roleHeaders() }).then(json),
