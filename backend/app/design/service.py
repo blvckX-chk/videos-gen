@@ -96,6 +96,49 @@ async def run_generate_job(
         save_job(job)
 
 
+async def run_enhance_job(job_id: str, asset_id: str, ops: dict) -> None:
+    """Amélioration / retouche d'un asset (auto, réglages, débruitage, upscale)."""
+    job = get_job(job_id)
+    if job is None:
+        return
+    try:
+        job.status = DesignJobStatus.RUNNING
+        job.touch()
+        parent = get_asset(asset_id)
+        if parent is None:
+            raise RuntimeError("Asset introuvable.")
+        img = _load_asset_image(parent)
+
+        if ops.get("auto"):
+            img = processing.auto_enhance(img)
+        if any(k in ops for k in ("brightness", "contrast", "saturation", "sharpness")):
+            img = processing.adjust(
+                img,
+                brightness=float(ops.get("brightness", 1.0)),
+                contrast=float(ops.get("contrast", 1.0)),
+                saturation=float(ops.get("saturation", 1.0)),
+                sharpness=float(ops.get("sharpness", 1.0)),
+            )
+        if ops.get("denoise"):
+            img = processing.denoise(img)
+        if ops.get("upscale"):
+            img = processing.upscale(img, factor=float(ops.get("upscale", 2.0)))
+
+        asset = _asset_from_image(
+            img, name=f"{parent.name} — retouché",
+            kind=AssetKind.PROCESSED, parent_id=parent.id, format=parent.format,
+        )
+        job.output_asset_ids = [asset.id]
+        job.status = DesignJobStatus.SUCCEEDED
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("enhance %s échoué", job_id)
+        job.status = DesignJobStatus.FAILED
+        job.error = str(exc)
+    finally:
+        job.touch()
+        save_job(job)
+
+
 async def run_remove_bg_job(job_id: str, asset_id: str) -> None:
     job = get_job(job_id)
     if job is None:

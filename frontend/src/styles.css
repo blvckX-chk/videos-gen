@@ -319,3 +319,8 @@ audio { filter: invert(0.92) hue-rotate(180deg); }
 .copy-body { font-size: 13px; margin: 0; color: var(--text); line-height: 1.4; }
 .copy-cta { font-size: 13px; margin: 0; color: var(--accent, #6d5efc); font-weight: 600; }
 .copy-tags { font-size: 12px; margin: 0; color: var(--accent-2, #22d3ee); }
+
+/* --- Réglages image --- */
+.adjust-panel summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+.adjust-row { display: flex; flex-direction: column; gap: 3px; margin: 8px 0; font-size: 12px; color: var(--muted); }
+.adjust-row input[type="range"] { width: 100%; }

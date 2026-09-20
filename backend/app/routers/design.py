@@ -122,6 +122,29 @@ async def remove_bg(req: RemoveBgRequest, background: BackgroundTasks) -> Design
     return job
 
 
+class EnhanceRequest(BaseModel):
+    asset_id: str
+    auto: bool = True
+    brightness: float | None = None
+    contrast: float | None = None
+    saturation: float | None = None
+    sharpness: float | None = None
+    denoise: bool = False
+    upscale: float | None = None   # facteur 1.0–4.0 (LANCZOS)
+
+
+@router.post("/enhance", response_model=DesignJob)
+async def enhance(req: EnhanceRequest, background: BackgroundTasks) -> DesignJob:
+    """Améliore / retouche un asset : auto, réglages manuels, débruitage, agrandissement."""
+    if get_asset(req.asset_id) is None:
+        raise HTTPException(404, "Asset introuvable.")
+    ops = req.model_dump(exclude_none=True)
+    ops.pop("asset_id", None)
+    job = save_job(DesignJob(kind="enhance"))
+    background.add_task(svc.run_enhance_job, job.id, req.asset_id, ops)
+    return job
+
+
 class ResizeRequest(BaseModel):
     asset_id: str
     formats: list[ImageFormat] = Field(min_length=1)

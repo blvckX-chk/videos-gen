@@ -256,6 +256,7 @@ Cadre directeur (inspiré des niveaux de conduite autonome) qui structure la mon
 - **EF-DSG-2** (P1) Composer des visuels par templates (citation, chiffre-clé, résumé, produit, +).
 - **EF-DSG-3** (P1) Décliner un visuel en plusieurs formats (recadrage intelligent, règle des tiers).
 - **EF-DSG-4** (P1) Retrait de fond, overlays (logo, texte, filtres), coins arrondis, dégradés.
+- **EF-DSG-7** (P1) **Amélioration & retouche** d'une image uploadée : auto-amélioration (contraste/couleur/netteté), réglages manuels, débruitage, agrandissement LANCZOS ×2–4. *(Super-résolution IA Real-ESRGAN = futur.)*
 - **EF-DSG-5** (P1) Filigrane appliqué selon le rôle (voir §13).
 - **EF-DSG-6** (P2) Bannières display multi-tailles, carrousels, formats print (A4).
 

@@ -10,7 +10,63 @@ import math
 from pathlib import Path
 from typing import Tuple
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
+
+# --------------------------------------------------------------------------- #
+# Amélioration & retouche (déterministe, PIL — gratuit, offline)
+# --------------------------------------------------------------------------- #
+def auto_enhance(img: Image.Image) -> Image.Image:
+    """Amélioration « one-click » : balance des niveaux + léger boost couleur,
+    contraste et netteté. Bon défaut pour un raw un peu terne."""
+    rgba = img.convert("RGBA")
+    alpha = rgba.split()[-1]
+    rgb = rgba.convert("RGB")
+    rgb = ImageOps.autocontrast(rgb, cutoff=1)          # étale les niveaux
+    rgb = ImageEnhance.Color(rgb).enhance(1.12)          # saturation +12 %
+    rgb = ImageEnhance.Contrast(rgb).enhance(1.06)       # contraste +6 %
+    rgb = ImageEnhance.Sharpness(rgb).enhance(1.15)      # netteté +15 %
+    out = rgb.convert("RGBA")
+    out.putalpha(alpha)
+    return out
+
+
+def adjust(img: Image.Image, brightness: float = 1.0, contrast: float = 1.0,
+           saturation: float = 1.0, sharpness: float = 1.0) -> Image.Image:
+    """Réglages manuels (facteurs, 1.0 = inchangé)."""
+    rgba = img.convert("RGBA")
+    alpha = rgba.split()[-1]
+    rgb = rgba.convert("RGB")
+    if brightness != 1.0:
+        rgb = ImageEnhance.Brightness(rgb).enhance(brightness)
+    if contrast != 1.0:
+        rgb = ImageEnhance.Contrast(rgb).enhance(contrast)
+    if saturation != 1.0:
+        rgb = ImageEnhance.Color(rgb).enhance(saturation)
+    if sharpness != 1.0:
+        rgb = ImageEnhance.Sharpness(rgb).enhance(sharpness)
+    out = rgb.convert("RGBA")
+    out.putalpha(alpha)
+    return out
+
+
+def denoise(img: Image.Image) -> Image.Image:
+    """Débruitage doux (filtre médian 3px) — utile pour les photos smartphone."""
+    rgba = img.convert("RGBA")
+    alpha = rgba.split()[-1]
+    rgb = rgba.convert("RGB").filter(ImageFilter.MedianFilter(size=3))
+    out = rgb.convert("RGBA")
+    out.putalpha(alpha)
+    return out
+
+
+def upscale(img: Image.Image, factor: float = 2.0, max_side: int = 4096) -> Image.Image:
+    """Agrandissement par rééchantillonnage LANCZOS (pas de l'IA : honnête).
+    Pour du vrai super-résolution, brancher Real-ESRGAN plus tard."""
+    factor = max(1.0, min(4.0, factor))
+    w = min(max_side, round(img.width * factor))
+    h = min(max_side, round(img.height * factor))
+    return img.resize((w, h), Image.LANCZOS)
+
 
 # --------------------------------------------------------------------------- #
 # Sauvegarde / probing

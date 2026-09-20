@@ -240,6 +240,9 @@ pour un futur super-agent orchestré.
   image, text, shape) sur un canvas de la taille du format cible, avec
   ancrage, opacité, coins arrondis, watermark blvckUnlimited assorti à la vidéo.
 - **Traitement PIL** :
+  - **Amélioration & retouche** : auto-amélioration (contraste/couleur/netteté),
+    réglages manuels (luminosité/contraste/saturation/netteté), débruitage,
+    agrandissement LANCZOS ×2–4 *(super-résolution IA Real-ESRGAN = futur)*
   - Redimensionnement / recadrage intelligent (`fit_cover`, focus règle des tiers)
   - Décliner un asset en plusieurs formats en un job
   - Overlays typographiques (wrap texte, shadow, stroke, alignement)

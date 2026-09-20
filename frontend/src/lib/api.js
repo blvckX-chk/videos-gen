@@ -148,6 +148,12 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ asset_id }),
       }).then(json),
+    enhance: (payload) =>
+      fetch(`${BASE}/design/enhance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(json),
     resize: (asset_id, formats) =>
       fetch(`${BASE}/design/resize`, {
         method: "POST",

@@ -34,6 +34,7 @@ export default function DesignStudio() {
   // Opérations sur asset sélectionné
   const [pickedAsset, setPickedAsset] = useState(null);
   const [opJob, setOpJob] = useState(null);
+  const [adj, setAdj] = useState({ brightness: 1, contrast: 1, saturation: 1, sharpness: 1 });
 
   const uploadRef = useRef();
 
@@ -106,7 +107,24 @@ export default function DesignStudio() {
       if (kind === "remove_bg") j = await api.design.removeBg(pickedAsset);
       else if (kind === "resize") j = await api.design.resize(pickedAsset,
         ["square", "story", "landscape"]);
+      else if (kind === "auto") j = await api.design.enhance({ asset_id: pickedAsset, auto: true });
+      else if (kind === "denoise") j = await api.design.enhance({ asset_id: pickedAsset, auto: false, denoise: true });
+      else if (kind === "upscale") j = await api.design.enhance({ asset_id: pickedAsset, auto: false, upscale: 2.0 });
       else return;
+      setOpJob(j);
+      pollJob(j.id, setOpJob, () => bump());
+    } catch (err) { setError(err.message); }
+  }
+
+  async function applyAdjust() {
+    if (!pickedAsset) return;
+    setError(null);
+    try {
+      const j = await api.design.enhance({
+        asset_id: pickedAsset, auto: false,
+        brightness: adj.brightness, contrast: adj.contrast,
+        saturation: adj.saturation, sharpness: adj.sharpness,
+      });
       setOpJob(j);
       pollJob(j.id, setOpJob, () => bump());
     } catch (err) { setError(err.message); }
@@ -116,9 +134,9 @@ export default function DesignStudio() {
     <div className="card">
       <h2 style={{ marginTop: 0 }}>🎨 Graphic Design</h2>
       <p className="muted small-text">
-        Visuels statiques — génération IA, templates (quote cards…), retrait de fond,
-        déclinaison multi-format. Tier <code>free</code> par défaut ; providers premium
-        activables via le champ <code>tier</code>.
+        Visuels statiques — génération IA, templates, <b>amélioration &amp; retouche</b>
+        (auto, réglages, débruitage, agrandissement), retrait de fond, déclinaison
+        multi-format. Tier <code>free</code> par défaut.
       </p>
 
       <section className="ds-section" style={{ borderTop: "none", paddingTop: 0 }}>
@@ -221,6 +239,15 @@ export default function DesignStudio() {
         <h3>Traiter un asset</h3>
         <p className="muted small-text">Sélectionne un asset ci-dessous puis choisis une opération.</p>
         <div className="ops-row">
+          <button className="ghost" disabled={!pickedAsset} onClick={() => op("auto")}>
+            ✨ Améliorer (auto)
+          </button>
+          <button className="ghost" disabled={!pickedAsset} onClick={() => op("denoise")}>
+            🧽 Débruiter
+          </button>
+          <button className="ghost" disabled={!pickedAsset} onClick={() => op("upscale")}>
+            🔍 Agrandir ×2
+          </button>
           <button className="ghost" disabled={!pickedAsset || !info?.rembg_available}
             onClick={() => op("remove_bg")}
             title={info?.rembg_available ? "Retirer le fond" : "rembg non installé"}>
@@ -230,6 +257,18 @@ export default function DesignStudio() {
             📐 Décliner en 3 formats
           </button>
         </div>
+
+        <details className="adjust-panel" style={{ marginTop: 10 }}>
+          <summary>🎚️ Réglages manuels</summary>
+          {["brightness", "contrast", "saturation", "sharpness"].map((k) => (
+            <label key={k} className="adjust-row">
+              <span>{{ brightness: "Luminosité", contrast: "Contraste", saturation: "Saturation", sharpness: "Netteté" }[k]} · {adj[k].toFixed(2)}</span>
+              <input type="range" min="0.5" max="1.8" step="0.05" value={adj[k]}
+                onChange={(e) => setAdj((a) => ({ ...a, [k]: Number(e.target.value) }))} />
+            </label>
+          ))}
+          <button className="primary" disabled={!pickedAsset} onClick={applyAdjust}>Appliquer les réglages</button>
+        </details>
         {opJob && <p className="muted small-text" style={{ marginTop: 8 }}>
           Opération : <b>{opJob.status}</b>
           {opJob.error && <span className="err"> — {opJob.error}</span>}
