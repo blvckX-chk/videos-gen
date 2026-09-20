@@ -64,6 +64,14 @@ export const api = {
   renderStatus: (id) => fetch(`${BASE}/render/${id}`).then(json),
   voices: () => fetch(`${BASE}/voices`).then(json),
 
+  // Console conversationnelle KORA
+  chat: (message, opts = {}) =>
+    fetch(`${BASE}/chat`, {
+      method: "POST",
+      headers: roleHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ message, ...opts }),
+    }).then(json),
+
   // Copywriting (Slice 6)
   copy: {
     platforms: () => fetch(`${BASE}/copy/platforms`).then(json),

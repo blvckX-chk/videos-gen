@@ -12,6 +12,7 @@ from .render.service import storage_root
 from .routers.api import router as api_router
 from .routers.audio import router as audio_router
 from .routers.campaign import router as campaign_router
+from .routers.chat import router as chat_router
 from .routers.copy import router as copy_router
 from .routers.design import router as design_router
 from .routers.identity import router as identity_router
@@ -44,6 +45,7 @@ app.include_router(design_router)
 app.include_router(campaign_router)
 app.include_router(identity_router)
 app.include_router(copy_router)
+app.include_router(chat_router)
 
 # Fichiers statiques : assets rasterisés (pages/cases) + vidéos rendues +
 # clips audio + images du module design. Chromium (Remotion) doit pouvoir

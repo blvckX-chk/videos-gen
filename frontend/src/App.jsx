@@ -8,12 +8,13 @@ import DesignStudio from "./components/DesignStudio.jsx";
 import CampaignStudio from "./components/CampaignStudio.jsx";
 import IdentityStudio from "./components/IdentityStudio.jsx";
 import CopyStudio from "./components/CopyStudio.jsx";
+import ChatStudio from "./components/ChatStudio.jsx";
 
 export default function App() {
   const [providers, setProviders] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [error, setError] = useState(null);
-  const [tab, setTab] = useState("campaign");
+  const [tab, setTab] = useState("chat");
   const pollers = useRef({});
 
   useEffect(() => {
@@ -63,6 +64,9 @@ export default function App() {
       </header>
 
       <nav className="tabs">
+        <button className={tab === "chat" ? "tab active" : "tab"} onClick={() => setTab("chat")}>
+          💬 KORA
+        </button>
         <button className={tab === "campaign" ? "tab active" : "tab"} onClick={() => setTab("campaign")}>
           🚀 Campagne (agent)
         </button>
@@ -88,6 +92,7 @@ export default function App() {
 
       {error && <div className="banner error">{error}</div>}
 
+      {tab === "chat" && <ChatStudio />}
       {tab === "campaign" && <CampaignStudio />}
       {tab === "pdf" && <IngestFlow />}
       {tab === "audio" && <AudioToolkit />}
