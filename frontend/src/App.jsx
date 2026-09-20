@@ -55,11 +55,12 @@ export default function App() {
     <div className="app">
       <header className="header">
         <h1>
-          <span className="logo">▶</span> videos-gen
+          <span className="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+          KORA <span className="baseline">compose.</span>
         </h1>
         <p className="tagline">
-          Génère des vidéos IA réalistes à partir d'un simple prompt. Multi-providers,
-          amélioration automatique du prompt.
+          Agent de création publicitaire 360° augmenté par IA — du brief à la campagne
+          complète. Moteur créatif de blvckUnlimited.
         </p>
       </header>
 
