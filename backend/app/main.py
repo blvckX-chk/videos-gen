@@ -47,6 +47,37 @@ app.include_router(identity_router)
 app.include_router(copy_router)
 app.include_router(chat_router)
 
+logger = logging.getLogger("videos_gen.startup")
+
+
+@app.on_event("startup")
+async def _rehydrate_stores() -> None:
+    """Recharge tous les stores depuis SQLite → l'état survit à un redémarrage.
+
+    Chaque module de stockage porte un `rehydrate()` idempotent. On les appelle
+    une fois au boot ; un module qui échoue ne bloque pas les autres.
+    """
+    from .audio import storage as audio_store
+    from .campaign import storage as campaign_store
+    from .design import storage as design_store
+    from .identity import charters as charters_store
+    from .services import documents as documents_store
+    from .services import jobs as jobs_store
+
+    for name, mod in (
+        ("documents", documents_store),
+        ("jobs", jobs_store),
+        ("design", design_store),
+        ("audio", audio_store),
+        ("campaigns", campaign_store),
+        ("chartes", charters_store),
+    ):
+        try:
+            n = mod.rehydrate()
+            logger.info("Réhydratation %s : %d enregistrement(s)", name, n)
+        except Exception:  # noqa: BLE001
+            logger.exception("Échec réhydratation du store %s", name)
+
 # Fichiers statiques : assets rasterisés (pages/cases) + vidéos rendues +
 # clips audio + images du module design. Chromium (Remotion) doit pouvoir
 # fetcher /assets/<doc_id>/<file>.jpg pendant le rendu.

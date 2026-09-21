@@ -17,7 +17,7 @@ from uuid import uuid4
 
 from ..models import CostEntry, Job, JobStatus
 from ..services.documents import get_document
-from ..services.jobs import _JOBS
+from ..services.jobs import _JOBS, get_job, save_job
 from ..storyboard.schema import Storyboard
 from .assets import prepare_assets, storage_root
 
@@ -71,7 +71,7 @@ def create_render_job(sb: Storyboard, tier: str = "free", client_id: str | None 
         tier=Tier(tier),
         client_id=client_id,
     )
-    _JOBS[job.id] = job
+    save_job(job)
     return job
 
 
@@ -84,7 +84,7 @@ async def run_render(job_id: str, sb: Storyboard, assets_base_url: str,
                      charte_id: str | None = None,
                      remove_watermark: bool = False,
                      watermark_text: str | None = None) -> None:
-    job = _JOBS.get(job_id)
+    job = get_job(job_id)
     if job is None:
         return
     doc = get_document(sb.document_id)
@@ -92,11 +92,13 @@ async def run_render(job_id: str, sb: Storyboard, assets_base_url: str,
         job.status = JobStatus.FAILED
         job.error = "Document introuvable pour ce storyboard."
         job.touch()
+        save_job(job)
         return
 
     try:
         job.status = JobStatus.RUNNING
         job.touch()
+        save_job(job)
 
         # 0) Marque : charte + filigrane selon les droits du rôle (Slice 5)
         sb = _apply_brand(sb, role, charte_id, remove_watermark, watermark_text)
@@ -182,6 +184,7 @@ async def run_render(job_id: str, sb: Storyboard, assets_base_url: str,
         job.video_url = f"/renders/{final_path.name}"
         job.status = JobStatus.SUCCEEDED
         job.touch()
+        save_job(job)
 
         # Cleanup des props (l'MP4 est conservé et servi)
         try:
@@ -193,6 +196,7 @@ async def run_render(job_id: str, sb: Storyboard, assets_base_url: str,
         job.status = JobStatus.FAILED
         job.error = str(exc)
         job.touch()
+        save_job(job)
 
 
 def is_render_available() -> bool:

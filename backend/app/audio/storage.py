@@ -5,12 +5,18 @@ la route statique `/audio/*` montée dans `main.py`.
 """
 from __future__ import annotations
 
+import logging
 import subprocess
 from pathlib import Path
 
+from .. import db
 from ..render.service import storage_root
 from .schema import AudioClip, AudioJob
 
+logger = logging.getLogger("videos_gen.audio")
+
+_CLIPS_COLLECTION = "audio_clips"
+_JOBS_COLLECTION = "audio_jobs"
 _CLIPS: dict[str, AudioClip] = {}
 _JOBS: dict[str, AudioJob] = {}
 
@@ -56,6 +62,7 @@ def probe_audio(path: Path) -> dict:
 
 def save_clip(clip: AudioClip) -> AudioClip:
     _CLIPS[clip.id] = clip
+    db.put(_CLIPS_COLLECTION, clip.id, clip.model_dump(mode="json"))
     return clip
 
 
@@ -71,6 +78,7 @@ def delete_clip(clip_id: str) -> bool:
     clip = _CLIPS.pop(clip_id, None)
     if clip is None:
         return False
+    db.delete(_CLIPS_COLLECTION, clip_id)
     for ext in ("mp3", "wav", "m4a"):
         p = clip_path(clip_id, ext)
         if p.exists():
@@ -80,8 +88,28 @@ def delete_clip(clip_id: str) -> bool:
 
 def save_job(job: AudioJob) -> AudioJob:
     _JOBS[job.id] = job
+    db.put(_JOBS_COLLECTION, job.id, job.model_dump(mode="json"))
     return job
 
 
 def get_job(job_id: str) -> AudioJob | None:
     return _JOBS.get(job_id)
+
+
+def rehydrate() -> int:
+    """Recharge clips + jobs audio depuis la base (au démarrage)."""
+    _CLIPS.clear()
+    _JOBS.clear()
+    for data in db.all(_CLIPS_COLLECTION):
+        try:
+            c = AudioClip.model_validate(data)
+            _CLIPS[c.id] = c
+        except Exception:  # noqa: BLE001
+            logger.warning("Clip audio illisible ignoré", exc_info=True)
+    for data in db.all(_JOBS_COLLECTION):
+        try:
+            j = AudioJob.model_validate(data)
+            _JOBS[j.id] = j
+        except Exception:  # noqa: BLE001
+            logger.warning("Job audio illisible ignoré", exc_info=True)
+    return len(_CLIPS) + len(_JOBS)

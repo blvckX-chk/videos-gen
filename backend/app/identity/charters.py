@@ -8,17 +8,23 @@ nom et le ton (facultatif).
 from __future__ import annotations
 
 import colorsys
+import logging
 
+from .. import db
 from .schema import Charte, CharteProposalRequest
 
+logger = logging.getLogger("videos_gen.charters")
+
 # --------------------------------------------------------------------------- #
-# Store en mémoire (persistance → Slice 7)
+# Store : cache mémoire + persistance write-through (collection `chartes`)
 # --------------------------------------------------------------------------- #
+_COLLECTION = "chartes"
 _CHARTES: dict[str, Charte] = {}
 
 
 def save_charte(c: Charte) -> Charte:
     _CHARTES[c.id] = c
+    db.put(_COLLECTION, c.id, c.model_dump(mode="json"))
     return c
 
 
@@ -31,7 +37,21 @@ def list_chartes() -> list[Charte]:
 
 
 def delete_charte(cid: str) -> bool:
-    return _CHARTES.pop(cid, None) is not None
+    existed = _CHARTES.pop(cid, None) is not None
+    db.delete(_COLLECTION, cid)
+    return existed
+
+
+def rehydrate() -> int:
+    """Recharge les chartes depuis la base (au démarrage)."""
+    _CHARTES.clear()
+    for data in db.all(_COLLECTION):
+        try:
+            c = Charte.model_validate(data)
+            _CHARTES[c.id] = c
+        except Exception:  # noqa: BLE001
+            logger.warning("Charte illisible ignorée", exc_info=True)
+    return len(_CHARTES)
 
 
 # --------------------------------------------------------------------------- #
