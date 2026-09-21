@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     # Serveur
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
+    # Auth admin (baseline solo-prod).
+    # - Vide (défaut) : mode dev/solo → rôle ADMIN par défaut, sans friction.
+    # - Défini : mode production → ADMIN uniquement avec le bon secret ;
+    #   sinon le rôle par défaut retombe à FREE et X-Role ne peut plus
+    #   s'auto-promouvoir admin. Poser via l'env ADMIN_SECRET (ou .env).
+    admin_secret: str = ""
+
     @property
     def cors_origins_list(self) -> List[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

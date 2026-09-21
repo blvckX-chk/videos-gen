@@ -61,9 +61,16 @@ def _brief_from_step(step: CampaignStep, document_id: str) -> Brief:
 def _brand_context(campaign: Campaign) -> dict:
     """Résout palette de charte + décision de filigrane selon le rôle (Slice 5)."""
     from ..identity.charters import get_charte
-    from ..identity.entitlements import decide_watermark, resolve_entitlements
+    from ..identity.entitlements import decide_watermark, get_entitlements
+    from ..identity.schema import Role
 
-    ent = resolve_entitlements(campaign.role)
+    # Le rôle a déjà été authentifié au routeur ; on l'honore (rôle inconnu →
+    # FREE, défaut sûr : filigrane forcé).
+    try:
+        resolved = Role(campaign.role) if campaign.role else Role.FREE
+    except ValueError:
+        resolved = Role.FREE
+    ent = get_entitlements(resolved)
     palette = None
     wm_text = campaign.watermark_text
     if campaign.charte_id:

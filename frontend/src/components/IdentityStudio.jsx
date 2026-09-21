@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, getRole, setRole } from "../lib/api.js";
+import { api, getRole, setRole, getAdminSecret, setAdminSecret } from "../lib/api.js";
 
 const AMBIANCES = ["moderne", "chaleureux", "luxe", "dynamique", "nature", "sobre"];
 
@@ -17,6 +17,9 @@ export default function IdentityStudio() {
   const [proposals, setProposals] = useState([]);
   const [busy, setBusy] = useState(false);
 
+  // Secret admin (baseline solo-prod)
+  const [secret, setSecretState] = useState(getAdminSecret());
+
   useEffect(() => { refresh(); }, [role]);
 
   async function refresh() {
@@ -28,6 +31,17 @@ export default function IdentityStudio() {
 
   function changeRole(r) {
     setRole(r); setRoleState(r);
+  }
+
+  async function saveSecret() {
+    setAdminSecret(secret.trim());
+    setError(null);
+    try {
+      const m = await api.identity.me();
+      setMe(m);
+      if (m.role === "admin") setError(null);
+      else setError("Secret non reconnu — rôle actuel : " + m.role);
+    } catch (e) { setError(e.message); }
   }
 
   async function propose() {
@@ -87,8 +101,29 @@ export default function IdentityStudio() {
           </ul>
         )}
         <p className="muted small-text">
-          (Le sélecteur simule un rôle pour tester. En prod il viendra du compte connecté.)
+          (Le sélecteur simule un rôle pour tester. En production, seul le secret
+          admin ci-dessous déverrouille le rôle admin ; sans lui, le rôle retombe
+          à <b>free</b> — filigrane forcé, quotas.)
         </p>
+
+        <div className="field small" style={{ marginTop: 12, maxWidth: 420 }}>
+          <span>Secret admin (production)</span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input type="password" value={secret} autoComplete="off"
+              onChange={(e) => setSecretState(e.target.value)}
+              placeholder="ADMIN_SECRET défini côté serveur" style={{ flex: 1 }} />
+            <button className="ghost" onClick={saveSecret}>Valider</button>
+            {secret && (
+              <button className="ghost small" onClick={() => { setSecretState(""); setAdminSecret(""); refresh(); }}>
+                Effacer
+              </button>
+            )}
+          </div>
+          <span className="muted small-text">
+            Stocké localement dans ce navigateur, envoyé en en-tête X-Admin-Secret.
+            En dev (aucun secret serveur), tu es admin par défaut.
+          </span>
+        </div>
       </section>
 
       {/* -------------------------------------------------------- Proposer une charte */}

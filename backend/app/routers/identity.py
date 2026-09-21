@@ -1,7 +1,7 @@
 """Routes identité : rôle courant, droits, et gestion des chartes de marque."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from ..identity.charters import (
     delete_charte,
@@ -10,16 +10,16 @@ from ..identity.charters import (
     propose_chartes,
     save_charte,
 )
-from ..identity.entitlements import resolve_entitlements
+from ..identity.deps import current_entitlements
 from ..identity.schema import Charte, CharteProposalRequest, Entitlements
 
 router = APIRouter(prefix="/api/identity")
 
 
 @router.get("/me", response_model=Entitlements)
-async def me(x_role: str | None = Header(default=None)) -> Entitlements:
-    """Rôle courant + droits. Défaut = admin (accès total)."""
-    return resolve_entitlements(x_role)
+async def me(ent: Entitlements = Depends(current_entitlements)) -> Entitlements:
+    """Rôle courant + droits (résolus depuis X-Role / X-Admin-Secret)."""
+    return ent
 
 
 # ------------------------------------------------------------- Chartes --- #

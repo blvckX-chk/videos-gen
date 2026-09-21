@@ -1,9 +1,12 @@
 """Routes du module Graphic Design."""
 from __future__ import annotations
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
+from ..identity.deps import current_entitlements
+from ..identity.entitlements import effective_watermark
+from ..identity.schema import Entitlements
 from ..design import service as svc
 from ..design.agent import DesignPlan, plan as agent_plan
 from ..design.processing import rembg_available
@@ -165,9 +168,11 @@ class ComposeRequest(BaseModel):
 
 
 @router.post("/compose", response_model=DesignJob)
-async def compose_ep(req: ComposeRequest, background: BackgroundTasks) -> DesignJob:
+async def compose_ep(req: ComposeRequest, background: BackgroundTasks,
+                     ent: Entitlements = Depends(current_entitlements)) -> DesignJob:
+    wm = effective_watermark(ent, req.watermark)
     job = save_job(DesignJob(kind="compose"))
-    background.add_task(svc.run_compose_job, job.id, req.composition, req.watermark)
+    background.add_task(svc.run_compose_job, job.id, req.composition, wm)
     return job
 
 
@@ -192,13 +197,15 @@ class TemplateRequest(BaseModel):
 
 
 @router.post("/templates/render", response_model=DesignJob)
-async def render_template(req: TemplateRequest, background: BackgroundTasks) -> DesignJob:
+async def render_template(req: TemplateRequest, background: BackgroundTasks,
+                          ent: Entitlements = Depends(current_entitlements)) -> DesignJob:
     try:
         comp = build_template(req.template, dict(req.params))
     except (KeyError, ValueError) as exc:
         raise HTTPException(400, f"Paramètres invalides : {exc}") from exc
+    wm = effective_watermark(ent, req.watermark)
     job = save_job(DesignJob(kind="compose"))
-    background.add_task(svc.run_compose_job, job.id, comp, req.watermark)
+    background.add_task(svc.run_compose_job, job.id, comp, wm)
     return job
 
 
@@ -211,10 +218,12 @@ class QuoteCardRequest(BaseModel):
 
 
 @router.post("/templates/quote-card", response_model=DesignJob)
-async def template_quote_card(req: QuoteCardRequest, background: BackgroundTasks) -> DesignJob:
+async def template_quote_card(req: QuoteCardRequest, background: BackgroundTasks,
+                              ent: Entitlements = Depends(current_entitlements)) -> DesignJob:
     comp = svc.quote_card(req.text, req.author, req.format, req.palette)
+    wm = effective_watermark(ent, req.watermark)
     job = save_job(DesignJob(kind="compose"))
-    background.add_task(svc.run_compose_job, job.id, comp, req.watermark)
+    background.add_task(svc.run_compose_job, job.id, comp, wm)
     return job
 
 
@@ -239,11 +248,13 @@ class AgentRunRequest(BaseModel):
 
 
 @router.post("/agent/run", response_model=DesignJob)
-async def agent_run(req: AgentRunRequest, background: BackgroundTasks) -> DesignJob:
+async def agent_run(req: AgentRunRequest, background: BackgroundTasks,
+                    ent: Entitlements = Depends(current_entitlements)) -> DesignJob:
+    wm = effective_watermark(ent, req.watermark)
     job = save_job(DesignJob(kind="agent"))
     background.add_task(
         svc.run_plan_job, job.id, [s.model_dump() for s in req.plan.steps],
-        req.plan.tier.value, req.watermark,
+        req.plan.tier.value, wm,
     )
     return job
 

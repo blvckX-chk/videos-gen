@@ -40,9 +40,17 @@ def _apply_brand(sb: Storyboard, role: str | None, charte_id: str | None,
     """Applique la charte (palette) et décide du filigrane selon le rôle.
     Un rôle `free` ne peut pas retirer le filigrane (garde-fou côté service)."""
     from ..identity.charters import get_charte
-    from ..identity.entitlements import decide_watermark, resolve_entitlements
+    from ..identity.entitlements import decide_watermark, get_entitlements
+    from ..identity.schema import Role
 
-    ent = resolve_entitlements(role)
+    # Le rôle a déjà été authentifié au niveau du routeur (secret admin) ;
+    # ici on l'honore tel quel. Rôle inconnu/None → FREE (filigrane forcé,
+    # défaut sûr : jamais de retrait de filigrane par défaut).
+    try:
+        resolved = Role(role) if role else Role.FREE
+    except ValueError:
+        resolved = Role.FREE
+    ent = get_entitlements(resolved)
     out = sb.model_copy(deep=True)
     brand: dict = {"name": "blvckUnlimited"}
 

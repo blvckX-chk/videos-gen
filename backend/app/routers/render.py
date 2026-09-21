@@ -1,10 +1,12 @@
 """Routes du Slice 3 : rendu du storyboard en MP4."""
 from __future__ import annotations
 
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel
 
-from ..identity.entitlements import effective_tier, resolve_entitlements
+from ..identity.deps import current_entitlements
+from ..identity.entitlements import effective_tier
+from ..identity.schema import Entitlements
 from ..models import Job, Tier
 from ..render.service import create_render_job, is_render_available, run_render
 from ..services.jobs import get_job
@@ -30,7 +32,7 @@ class RenderRequest(BaseModel):
 
 @router.post("/render", response_model=Job)
 async def render(req: RenderRequest, background: BackgroundTasks, request: Request,
-                 x_role: str | None = Header(default=None)) -> Job:
+                 ent: Entitlements = Depends(current_entitlements)) -> Job:
     if not is_render_available():
         raise HTTPException(
             503,
@@ -38,7 +40,6 @@ async def render(req: RenderRequest, background: BackgroundTasks, request: Reque
             "(Node/Chromium manquant ou projet remotion/ absent).",
         )
     # Le rôle contraint le tier (un free ne monte pas en premium).
-    ent = resolve_entitlements(x_role)
     tier = effective_tier(ent, req.tier.value)
     job = create_render_job(req.storyboard, tier=tier, client_id=req.client_id)
 

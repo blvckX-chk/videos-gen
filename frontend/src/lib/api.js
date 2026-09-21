@@ -8,8 +8,22 @@ export function getRole() {
 export function setRole(r) {
   try { localStorage.setItem("bu-role", r); } catch { /* ignore */ }
 }
+// Secret admin (baseline solo-prod) — envoyé en en-tête X-Admin-Secret.
+// Requis en production pour déverrouiller le rôle admin ; inutile en dev/solo.
+export function getAdminSecret() {
+  try { return localStorage.getItem("bu-admin-secret") || ""; } catch { return ""; }
+}
+export function setAdminSecret(s) {
+  try {
+    if (s) localStorage.setItem("bu-admin-secret", s);
+    else localStorage.removeItem("bu-admin-secret");
+  } catch { /* ignore */ }
+}
 function roleHeaders(extra = {}) {
-  return { "X-Role": getRole(), ...extra };
+  const h = { "X-Role": getRole(), ...extra };
+  const secret = getAdminSecret();
+  if (secret) h["X-Admin-Secret"] = secret;
+  return h;
 }
 
 async function json(res) {
@@ -171,14 +185,14 @@ export const api = {
     quoteCard: (payload) =>
       fetch(`${BASE}/design/templates/quote-card`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: roleHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       }).then(json),
     templates: () => fetch(`${BASE}/design/templates`).then(json),
     renderTemplate: (payload) =>
       fetch(`${BASE}/design/templates/render`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: roleHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       }).then(json),
     agentPlan: (payload) =>
@@ -190,7 +204,7 @@ export const api = {
     agentRun: (payload) =>
       fetch(`${BASE}/design/agent/run`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: roleHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       }).then(json),
     job: (id) => fetch(`${BASE}/design/jobs/${id}`).then(json),
