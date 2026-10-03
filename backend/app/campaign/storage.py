@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 
 from .. import db
-from .schema import Campaign, CampaignJob
+from .schema import Campaign, CampaignJob, CampaignJobStatus, StepError
 
 logger = logging.getLogger("videos_gen.campaign")
 
@@ -51,7 +51,15 @@ def rehydrate() -> int:
     for data in db.all(_JOBS_COLLECTION):
         try:
             j = CampaignJob.model_validate(data)
-            _JOBS[j.id] = j
         except Exception:  # noqa: BLE001
             logger.warning("Job campagne illisible ignoré", exc_info=True)
+            continue
+        # Orphelin (ni succeeded/partial/failed) → marqué FAILED au boot.
+        if j.status in (CampaignJobStatus.QUEUED, CampaignJobStatus.RUNNING):
+            j.status = CampaignJobStatus.FAILED
+            j.errors.append(StepError(step_index=-1, step_label="(système)",
+                                      message="Interrompu par un redémarrage du serveur."))
+            j.touch()
+            db.put(_JOBS_COLLECTION, j.id, j.model_dump(mode="json"))
+        _JOBS[j.id] = j
     return len(_CAMPAIGNS) + len(_JOBS)

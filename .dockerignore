@@ -1,0 +1,13 @@
+# Contexte de build minimal (accélère et évite de copier des artefacts lourds).
+**/.git
+**/.venv
+**/venv
+**/__pycache__
+**/*.pyc
+**/node_modules
+frontend/dist
+remotion/out
+storage/
+*.log
+.DS_Store
+docs/*.pdf

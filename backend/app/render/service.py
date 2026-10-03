@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import shutil
 import time
 from pathlib import Path
@@ -24,9 +25,11 @@ from .assets import prepare_assets, storage_root
 logger = logging.getLogger("videos_gen.render")
 
 REMOTION_DIR = Path(__file__).resolve().parents[3] / "remotion"
-# Chromium fourni par l'environnement — remplace le download Remotion. Peut
-# être surchargé via l'env var REMOTION_CHROMIUM. Compatible playwright.
-DEFAULT_CHROMIUM = "/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell"
+# Chromium fourni par l'environnement — remplace le download Remotion. Surchargé
+# via l'env var REMOTION_CHROMIUM (défini dans l'image Docker). À défaut, on
+# retombe sur le chemin playwright de l'environnement de dev.
+_DEV_CHROMIUM = "/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell"
+DEFAULT_CHROMIUM = os.environ.get("REMOTION_CHROMIUM") or _DEV_CHROMIUM
 
 
 def _output_dir() -> Path:

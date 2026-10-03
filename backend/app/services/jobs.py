@@ -39,15 +39,28 @@ def list_jobs(limit: int = 50) -> list[Job]:
     return jobs[:limit]
 
 
+_TERMINAL = {JobStatus.SUCCEEDED, JobStatus.FAILED}
+
+
 def rehydrate() -> int:
-    """Recharge les jobs depuis la base dans le cache mémoire (au démarrage)."""
+    """Recharge les jobs depuis la base dans le cache mémoire (au démarrage).
+
+    Les jobs laissés en cours par un crash (statut non terminal) n'ont plus de
+    tâche de fond qui les porte : on les marque FAILED (jobs « orphelins »)
+    pour éviter des spinners infinis côté UI."""
     _JOBS.clear()
     for data in db.all(_COLLECTION):
         try:
             job = Job.model_validate(data)
-            _JOBS[job.id] = job
         except Exception:  # noqa: BLE001 — un enregistrement corrompu ne bloque pas le boot
             logger.warning("Job illisible ignoré à la réhydratation", exc_info=True)
+            continue
+        if job.status not in _TERMINAL:
+            job.status = JobStatus.FAILED
+            job.error = "Interrompu par un redémarrage du serveur."
+            job.touch()
+            db.put(_COLLECTION, job.id, job.model_dump(mode="json"))
+        _JOBS[job.id] = job
     return len(_JOBS)
 
 

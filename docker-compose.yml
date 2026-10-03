@@ -1,0 +1,40 @@
+# ===========================================================================
+# KORA — déploiement solo-prod (test & production).
+#   docker compose up -d --build
+# Le frontend (nginx) écoute sur HTTP_PORT (défaut 80) et proxifie le backend.
+# La persistance (SQLite + fichiers) vit dans le volume nommé « kora-storage ».
+# ===========================================================================
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kora-backend:latest
+    env_file:
+      - path: backend/.env
+        required: false
+    environment:
+      # Secret admin : défini ici → mode production (admin via X-Admin-Secret).
+      # Laisse vide pour le mode dev/solo (admin par défaut).
+      ADMIN_SECRET: ${ADMIN_SECRET:-}
+      REMOTION_CHROMIUM: /opt/chromium/headless_shell
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
+    volumes:
+      - kora-storage:/app/storage
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: kora-web:latest
+    depends_on:
+      - backend
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    restart: unless-stopped
+
+volumes:
+  kora-storage:

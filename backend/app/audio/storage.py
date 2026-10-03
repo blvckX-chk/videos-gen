@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .. import db
 from ..render.service import storage_root
-from .schema import AudioClip, AudioJob
+from .schema import AudioClip, AudioJob, AudioJobStatus
 
 logger = logging.getLogger("videos_gen.audio")
 
@@ -109,7 +109,13 @@ def rehydrate() -> int:
     for data in db.all(_JOBS_COLLECTION):
         try:
             j = AudioJob.model_validate(data)
-            _JOBS[j.id] = j
         except Exception:  # noqa: BLE001
             logger.warning("Job audio illisible ignoré", exc_info=True)
+            continue
+        if j.status not in (AudioJobStatus.SUCCEEDED, AudioJobStatus.FAILED):
+            j.status = AudioJobStatus.FAILED
+            j.error = "Interrompu par un redémarrage du serveur."
+            j.touch()
+            db.put(_JOBS_COLLECTION, j.id, j.model_dump(mode="json"))
+        _JOBS[j.id] = j
     return len(_CLIPS) + len(_JOBS)
