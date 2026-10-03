@@ -133,19 +133,26 @@ docker compose up -d --build       # reconstruit et redémarre ; le volume (donn
 
 ## 6. TLS / HTTPS (production)
 
-Pour servir en HTTPS avec un domaine, le plus simple est de placer un
-**reverse-proxy TLS** devant (Caddy ou Traefik gèrent Let's Encrypt
-automatiquement). Exemple minimal avec Caddy sur l'hôte :
+Une surcharge Compose prête à l'emploi ajoute **Caddy** devant KORA : il obtient
+et renouvelle automatiquement un certificat Let's Encrypt (HTTP/2 + HTTP/3).
+
+**Pré-requis** : un enregistrement DNS **A** (et **AAAA** si IPv6) qui pointe ton
+domaine vers l'IP publique du VPS. Vérifie : `dig +short mon-domaine.com`.
+
+Puis lance avec les deux fichiers compose :
 
 ```bash
-# /etc/caddy/Caddyfile
-mon-domaine.com {
-    reverse_proxy localhost:80
-}
+export DOMAIN=kora.mon-domaine.com
+export ACME_EMAIL=moi@mon-domaine.com    # pour les avis d'expiration Let's Encrypt
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
-Puis mets `HTTP_PORT=8080` dans `.env` racine (pour libérer le 80 pour Caddy) et
-`CORS_ORIGINS=https://mon-domaine.com`.
+Caddy prend alors les ports 80/443 ; le conteneur `web` n'est plus exposé
+directement. Teste : `curl https://kora.mon-domaine.com/health`.
+
+> Pour pérenniser, mets `DOMAIN` / `ACME_EMAIL` dans le `.env` racine et garde
+> l'habitude de lancer avec `-f docker-compose.yml -f docker-compose.prod.yml`.
+> `CORS_ORIGINS` est automatiquement calé sur `https://$DOMAIN` par la surcharge.
 
 ---
 

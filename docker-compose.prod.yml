@@ -1,0 +1,41 @@
+# ===========================================================================
+# Surcharge production : HTTPS via Caddy (certificat Let's Encrypt automatique).
+#
+#   DOMAIN=kora.mondomaine.com ACME_EMAIL=moi@mondomaine.com \
+#     docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Caddy prend les ports 80/443 ; le service web n'est plus exposé directement.
+# Pré-requis : un enregistrement DNS A (et AAAA si IPv6) pointant DOMAIN → IP du VPS.
+# ===========================================================================
+services:
+  web:
+    # Ne plus publier le port 80 : Caddy est le seul point d'entrée public.
+    ports: !reset []
+    expose:
+      - "80"
+
+  backend:
+    # Autoriser l'origine HTTPS du domaine pour CORS.
+    environment:
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://${DOMAIN}}
+
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    environment:
+      DOMAIN: ${DOMAIN:?Définis DOMAIN=ton-domaine dans l'environnement}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
