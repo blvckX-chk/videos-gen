@@ -122,15 +122,18 @@ async def run_render(job_id: str, sb: Storyboard, assets_base_url: str,
         out_path = _output_dir() / f"{job.id}.mp4"
         props_path.write_text(json.dumps({"storyboard": sb_ready.model_dump()}), encoding="utf-8")
 
-        # 3) Lancer le rendu (Node fait le vrai travail)
+        # 3) Lancer le rendu (Node fait le vrai travail). On ne force
+        #    --browser-executable que si le binaire existe réellement ; sinon on
+        #    laisse Remotion utiliser (ou télécharger) son propre chrome-headless-shell.
         chromium = chromium_path or DEFAULT_CHROMIUM
         cmd = [
             "npx", "remotion", "render", "Video",
             str(out_path),
             f"--props={props_path}",
-            f"--browser-executable={chromium}",
             "--log=warn",
         ]
+        if chromium and Path(chromium).exists():
+            cmd.append(f"--browser-executable={chromium}")
         started = time.monotonic()
         proc = await asyncio.create_subprocess_exec(
             *cmd,
@@ -211,6 +214,9 @@ async def run_render(job_id: str, sb: Storyboard, assets_base_url: str,
 
 
 def is_render_available() -> bool:
-    """Le pipeline de rendu est-il utilisable localement ?"""
+    """Le pipeline de rendu est-il utilisable localement ?
+
+    Node + le projet Remotion suffisent : si le binaire Chromium n'est pas
+    pré-installé, Remotion télécharge son propre chrome-headless-shell au besoin."""
     node = shutil.which("npx") or shutil.which("node")
-    return node is not None and REMOTION_DIR.exists() and Path(DEFAULT_CHROMIUM).exists()
+    return node is not None and REMOTION_DIR.exists()

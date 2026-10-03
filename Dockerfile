@@ -38,17 +38,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Dépendances Python + Playwright (sert uniquement à fournir chrome-headless-shell,
-# le binaire que Remotion sait piloter).
+# le binaire que Remotion sait piloter). Playwright >= 1.49 expose la cible
+# dédiée « chromium-headless-shell ».
 COPY backend/requirements.txt backend/requirements.txt
-RUN pip install -r backend/requirements.txt "playwright==1.47.0"
+RUN pip install -r backend/requirements.txt "playwright==1.49.1"
 
-# Chromium headless-shell + libs système, puis symlink à chemin stable.
-RUN playwright install --with-deps chromium \
- && mkdir -p /opt/chromium \
- && ln -sf "$(find /opt/pw-browsers -type f \( -name headless_shell -o -name chrome-headless-shell \) | head -n1)" \
-           /opt/chromium/headless_shell \
- && test -x /opt/chromium/headless_shell \
- && chmod -R a+rX /opt/pw-browsers /opt/chromium
+# Libs système Chromium + binaire headless-shell, puis symlink à chemin stable.
+RUN set -eux; \
+    playwright install-deps chromium; \
+    playwright install chromium-headless-shell; \
+    mkdir -p /opt/chromium; \
+    shell_bin="$(find /opt/pw-browsers -type f -name headless_shell | head -n1)"; \
+    test -n "$shell_bin"; \
+    ln -sf "$shell_bin" /opt/chromium/headless_shell; \
+    test -x /opt/chromium/headless_shell; \
+    chmod -R a+rX /opt/pw-browsers /opt/chromium
 
 # Remotion (node_modules + source) depuis le stage Node.
 COPY --from=remotion /app/remotion /app/remotion
