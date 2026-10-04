@@ -37,6 +37,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def _no_store_api(request, call_next):
+    """Empêche la mise en cache des réponses API (navigateur / proxy / CDN).
+
+    Sans cela, un GET comme /api/identity/me peut être resservi depuis le cache
+    même après ajout de l'en-tête X-Admin-Secret → le rôle semble bloqué sur free.
+    """
+    response = await call_next(request)
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
 app.include_router(api_router)
 app.include_router(ingest_router)
 app.include_router(render_router)

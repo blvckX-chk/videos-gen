@@ -99,7 +99,7 @@ export const api = {
 
   // Identité & marque (Slice 5)
   identity: {
-    me: () => fetch(`${BASE}/identity/me`, { headers: roleHeaders() }).then(json),
+    me: () => fetch(`${BASE}/identity/me`, { headers: roleHeaders(), cache: "no-store" }).then(json),
     chartes: () => fetch(`${BASE}/identity/chartes`).then(json),
     createCharte: (charte) =>
       fetch(`${BASE}/identity/chartes`, {

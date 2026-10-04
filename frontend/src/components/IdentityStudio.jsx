@@ -33,15 +33,17 @@ export default function IdentityStudio() {
     setRole(r); setRoleState(r);
   }
 
+  const [secretOk, setSecretOk] = useState(null);   // null | true | false
+
   async function saveSecret() {
     setAdminSecret(secret.trim());
     setError(null);
+    setSecretOk(null);
     try {
       const m = await api.identity.me();
       setMe(m);
-      if (m.role === "admin") setError(null);
-      else setError("Secret non reconnu — rôle actuel : " + m.role);
-    } catch (e) { setError(e.message); }
+      setSecretOk(m.role === "admin");
+    } catch (e) { setError(e.message); setSecretOk(false); }
   }
 
   async function propose() {
@@ -123,6 +125,16 @@ export default function IdentityStudio() {
             Stocké localement dans ce navigateur, envoyé en en-tête X-Admin-Secret.
             En dev (aucun secret serveur), tu es admin par défaut.
           </span>
+          {secretOk === true && (
+            <span className="small-text" style={{ color: "var(--positive, #6FC077)" }}>
+              ✓ Secret validé — tu es <b>admin</b>.
+            </span>
+          )}
+          {secretOk === false && (
+            <span className="small-text" style={{ color: "var(--negative, #E06B4F)" }}>
+              ✗ Secret non reconnu — rôle actuel : <b>{me?.role || "free"}</b>. Vérifie la valeur copiée.
+            </span>
+          )}
         </div>
       </section>
 
