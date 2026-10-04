@@ -3,6 +3,12 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  // Les fichiers compilés vont sous /static/ (et non /assets/) pour éviter la
+  // collision avec le montage statique /assets du backend (images des PDF pour
+  // Remotion), proxifié par nginx vers le backend en production.
+  build: {
+    assetsDir: "static",
+  },
   server: {
     port: 5173,
     // Proxy des appels /api vers le backend FastAPI pour éviter les soucis CORS en dev.
