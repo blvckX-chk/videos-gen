@@ -154,6 +154,22 @@ directement. Teste : `curl https://kora.mon-domaine.com/health`.
 > l'habitude de lancer avec `-f docker-compose.yml -f docker-compose.prod.yml`.
 > `CORS_ORIGINS` est automatiquement calé sur `https://$DOMAIN` par la surcharge.
 
+### Derrière Cloudflare (recommandé — cache l'IP du serveur)
+
+Pour masquer l'IP d'origine et profiter du CDN/DDoS gratuit :
+
+1. **DNS** : enregistrement `A` du sous-domaine → IP du VPS, **proxy activé
+   (nuage ORANGE)**.
+2. **SSL/TLS → Overview** : mode **Full** (⚠️ surtout pas *Flexible*, qui crée
+   une boucle de redirection avec Caddy).
+3. Le `Caddyfile` fourni est déjà en mode `tls internal` : Cloudflare présente le
+   certificat public aux visiteurs, Caddy chiffre le lien Cloudflare↔origine.
+4. Lance comme ci-dessus (`DOMAIN=…` + les deux fichiers compose). `ACME_EMAIL`
+   est inutile dans ce mode.
+
+Durcissement optionnel : mode **Full (strict)** + *Cloudflare Origin Certificate*
+monté dans Caddy (`tls /chemin/cert.pem /chemin/key.pem`).
+
 ---
 
 ## 7. Sauvegarde des données

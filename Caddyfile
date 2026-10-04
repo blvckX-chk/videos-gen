@@ -1,14 +1,17 @@
-# Caddy — terminaison TLS automatique (Let's Encrypt) devant KORA.
-# DOMAIN et ACME_EMAIL viennent de l'environnement (voir docker-compose.prod.yml).
-{
-	email {$ACME_EMAIL}
-}
-
+# Caddy — reverse-proxy TLS devant KORA.
+#
+# MODE PAR DÉFAUT : derrière le proxy Cloudflare (nuage ORANGE), SSL/TLS = "Full".
+#   Cloudflare présente le certificat public (et cache l'IP du serveur) ; Caddy
+#   chiffre le lien Cloudflare↔origine avec un certificat interne (`tls internal`).
+#
+# ACCÈS DIRECT sans Cloudflare (nuage GRIS) : remplace `tls internal` par
+#   `tls {$ACME_EMAIL}` pour obtenir un vrai certificat Let's Encrypt.
 {$DOMAIN} {
 	encode zstd gzip
 	# Uploads volumineux (PDF, vidéos) — aligne avec nginx (50 Mo).
 	request_body {
 		max_size 50MB
 	}
+	tls internal
 	reverse_proxy web:80
 }
