@@ -21,15 +21,22 @@ COPY remotion/ ./
 # --------------------------------------------------------------------------- #
 FROM python:3.11-slim-bookworm AS runtime
 
+# TORCH_HOME/U2NET_HOME/XDG_CACHE_HOME : caches des modèles optionnels
+# (demucs, rembg) dirigés vers le volume persistant → téléchargés une seule fois.
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers \
     REMOTION_CHROMIUM=/opt/chromium/headless_shell \
-    NODE_ENV=production
+    NODE_ENV=production \
+    TORCH_HOME=/app/storage/models/torch \
+    U2NET_HOME=/app/storage/models/rembg \
+    XDG_CACHE_HOME=/app/storage/cache \
+    NUMBA_CACHE_DIR=/app/storage/cache/numba
 
-# Node 20 (pour `npx remotion`), ffmpeg, libsndfile (soundfile), polices.
+# Node 20 (pour `npx remotion`), ffmpeg, libsndfile (soundfile), espeak-ng
+# (voix off gratuite sans clé), polices.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl gnupg ffmpeg libsndfile1 \
+      ca-certificates curl gnupg ffmpeg libsndfile1 espeak-ng \
       fonts-dejavu-core fonts-liberation \
  && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
  && apt-get install -y --no-install-recommends nodejs \
@@ -42,6 +49,15 @@ WORKDIR /app
 # dédiée « chromium-headless-shell ».
 COPY backend/requirements.txt backend/requirements.txt
 RUN pip install -r backend/requirements.txt "playwright==1.49.1"
+
+# Dépendances optionnelles (features avancées) :
+#  - rembg  : suppression de fond (design)
+#  - demucs : séparation de stems audio (extraire le beat sans la voix)
+# PyTorch est installé en build CPU (index dédié) pour éviter ~2,5 Go de
+# librairies CUDA inutiles sur un VPS sans GPU.
+RUN pip install --index-url https://download.pytorch.org/whl/cpu \
+        torch==2.2.2 torchaudio==2.2.2 \
+ && pip install "demucs==4.0.1" "rembg[cpu]"
 
 # Libs système Chromium + binaire headless-shell, puis symlink à chemin stable.
 RUN set -eux; \
