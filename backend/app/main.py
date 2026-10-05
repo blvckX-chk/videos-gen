@@ -19,6 +19,7 @@ from .routers.identity import router as identity_router
 from .routers.ingest import router as ingest_router
 from .routers.presets import router as presets_router
 from .routers.render import router as render_router
+from .routers.stock import router as stock_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -61,6 +62,7 @@ app.include_router(identity_router)
 app.include_router(copy_router)
 app.include_router(chat_router)
 app.include_router(presets_router)
+app.include_router(stock_router)
 
 logger = logging.getLogger("videos_gen.startup")
 
@@ -78,6 +80,7 @@ async def _rehydrate_stores() -> None:
     from .identity import charters as charters_store
     from .services import documents as documents_store
     from .services import jobs as jobs_store
+    from .stock import storage as stock_store
 
     for name, mod in (
         ("documents", documents_store),
@@ -86,6 +89,7 @@ async def _rehydrate_stores() -> None:
         ("audio", audio_store),
         ("campaigns", campaign_store),
         ("chartes", charters_store),
+        ("stock", stock_store),
     ):
         try:
             n = mod.rehydrate()
@@ -97,13 +101,14 @@ async def _rehydrate_stores() -> None:
 # clips audio + images du module design. Chromium (Remotion) doit pouvoir
 # fetcher /assets/<doc_id>/<file>.jpg pendant le rendu.
 _storage = storage_root()
-for sub in ("assets", "renders", "audio", "audio_sources", "design"):
+for sub in ("assets", "renders", "audio", "audio_sources", "design", "stock"):
     (_storage / sub).mkdir(parents=True, exist_ok=True)
 app.mount("/assets", StaticFiles(directory=_storage / "assets"), name="assets")
 app.mount("/renders", StaticFiles(directory=_storage / "renders"), name="renders")
 app.mount("/audio", StaticFiles(directory=_storage / "audio"), name="audio")
 app.mount("/audio_sources", StaticFiles(directory=_storage / "audio_sources"), name="audio_sources")
 app.mount("/design", StaticFiles(directory=_storage / "design"), name="design")
+app.mount("/stock", StaticFiles(directory=_storage / "stock"), name="stock")
 
 
 @app.get("/health")

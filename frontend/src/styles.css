@@ -395,3 +395,21 @@ audio { filter: invert(0.92) hue-rotate(180deg); }
 .step-params dt { color: var(--muted); font-size: 12px; }
 .step-params dd { margin: 0; font-size: 12px; color: var(--text); }
 .step-prompt { font-size: 13px; color: var(--text); margin: 6px 0 0; font-style: italic; }
+
+/* ---- Stock (tranche 2 : Pexels / Pixabay) ---- */
+.stock-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+.stock-bar input[type="text"] { flex: 1; min-width: 200px; background: var(--panel-2);
+  border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 10px 12px; font: inherit; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.seg button { background: transparent; color: var(--muted); border: none; padding: 8px 14px;
+  font: inherit; cursor: pointer; }
+.seg button.on { background: var(--accent); color: #fff; }
+.stock-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); margin-top: 8px; }
+.stock-item { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--panel-2); }
+.stock-thumb { aspect-ratio: 1/1; background-size: cover; background-position: center; position: relative; }
+.stock-badge { position: absolute; left: 8px; top: 8px; background: rgba(0,0,0,.55); color: #fff;
+  font-size: 11px; padding: 3px 8px; border-radius: 999px; }
+.stock-src { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.5); color: #fff;
+  font-size: 10px; letter-spacing: .04em; padding: 2px 7px; border-radius: 5px; text-transform: uppercase; }
+.stock-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; }
+.stock-author { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

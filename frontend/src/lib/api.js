@@ -211,6 +211,21 @@ export const api = {
     job: (id) => fetch(`${BASE}/design/jobs/${id}`).then(json),
   },
 
+  // Banques de médias libres (Pexels / Pixabay)
+  stock: {
+    sources: () => fetch(`${BASE}/stock/sources`, { cache: "no-store" }).then(json),
+    search: (q, kind = "photo", source = "") =>
+      fetch(`${BASE}/stock/search?q=${encodeURIComponent(q)}&kind=${kind}` +
+            (source ? `&source=${source}` : ""), { cache: "no-store" }).then(json),
+    clips: () => fetch(`${BASE}/stock/clips`, { cache: "no-store" }).then(json),
+    import: (item, query = "") =>
+      fetch(`${BASE}/stock/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ item, query }),
+      }).then(json),
+  },
+
   // Super-agent unifié (campagne multi-modalités)
   campaign: {
     plan: (payload) =>

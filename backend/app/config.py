@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     # Voix off premium (Slice 4)
     elevenlabs_api_key: str = ""
 
+    # Banques de médias libres (b-roll réel, gratuit). Clés API gratuites.
+    pexels_api_key: str = ""
+    pixabay_api_key: str = ""
+
     # Serveur
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 

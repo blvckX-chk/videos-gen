@@ -9,6 +9,7 @@ import CampaignStudio from "./components/CampaignStudio.jsx";
 import IdentityStudio from "./components/IdentityStudio.jsx";
 import CopyStudio from "./components/CopyStudio.jsx";
 import ChatStudio from "./components/ChatStudio.jsx";
+import StockStudio from "./components/StockStudio.jsx";
 
 export default function App() {
   const [providers, setProviders] = useState([]);
@@ -83,6 +84,9 @@ export default function App() {
         <button className={tab === "design" ? "tab active" : "tab"} onClick={() => setTab("design")}>
           🎨 Graphic design
         </button>
+        <button className={tab === "stock" ? "tab active" : "tab"} onClick={() => setTab("stock")}>
+          🎞️ Stock
+        </button>
         <button className={tab === "copy" ? "tab active" : "tab"} onClick={() => setTab("copy")}>
           ✍️ Copywriting
         </button>
@@ -98,6 +102,7 @@ export default function App() {
       {tab === "pdf" && <IngestFlow />}
       {tab === "audio" && <AudioToolkit />}
       {tab === "design" && <DesignStudio />}
+      {tab === "stock" && <StockStudio />}
       {tab === "copy" && <CopyStudio />}
       {tab === "identity" && <IdentityStudio />}
 
