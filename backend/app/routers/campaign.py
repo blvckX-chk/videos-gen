@@ -69,7 +69,10 @@ async def run(req: RunRequest, background: BackgroundTasks, request: Request,
     save_campaign(campaign)
 
     job = save_job(CampaignJob(campaign_id=campaign.id, steps_total=len(campaign.steps)))
-    assets_base = str(request.base_url).rstrip("/") + "/assets"
+    # URL interne pour Remotion (voir routers/render.py) — évite la boucle via le proxy/CDN.
+    from ..config import get_settings
+    base = (get_settings().internal_base_url or str(request.base_url)).rstrip("/")
+    assets_base = base + "/assets"
     background.add_task(execute_campaign, job, campaign, assets_base)
     return job
 

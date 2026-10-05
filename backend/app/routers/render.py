@@ -43,8 +43,11 @@ async def render(req: RenderRequest, background: BackgroundTasks, request: Reque
     tier = effective_tier(ent, req.tier.value)
     job = create_render_job(req.storyboard, tier=tier, client_id=req.client_id)
 
-    # URL absolue vers les assets — Remotion (chromium) doit pouvoir la fetcher.
-    assets_base = str(request.base_url).rstrip("/") + "/assets"
+    # URL vers les assets que Remotion/Chromium (dans le conteneur) va fetcher.
+    # URL interne (127.0.0.1:8000) pour éviter de boucler via le reverse-proxy/CDN.
+    from ..config import get_settings
+    base = (get_settings().internal_base_url or str(request.base_url)).rstrip("/")
+    assets_base = base + "/assets"
     background.add_task(
         run_render, job.id, req.storyboard, assets_base, None,
         req.narration, req.captions, req.voice_provider, req.music_clip_id,
