@@ -16,7 +16,7 @@ import time
 from pathlib import Path
 from uuid import uuid4
 
-from ..models import CostEntry, Job, JobStatus
+from ..models import CostEntry, Job, JobStatus, Tier
 from ..services.documents import get_document
 from ..services.jobs import _JOBS, get_job, save_job
 from ..storyboard.schema import Storyboard
@@ -72,7 +72,6 @@ def _apply_brand(sb: Storyboard, role: str | None, charte_id: str | None,
 
 
 def create_render_job(sb: Storyboard, tier: str = "free", client_id: str | None = None) -> Job:
-    from ..models import Tier
     job = Job(
         provider="remotion",
         model=sb.template,
