@@ -5,10 +5,12 @@ from .base import TTSProvider
 from .elevenlabs import ElevenLabsProvider
 from .espeak import EspeakProvider
 from .kokoro import KokoroProvider
+from .piper import PiperProvider
 
 _PROVIDERS: dict[str, TTSProvider] = {
     p.id: p for p in (
-        KokoroProvider(),      # gratuit qualité (VPS)
+        PiperProvider(),       # gratuit, naturel, offline (défaut VPS)
+        KokoroProvider(),      # gratuit qualité (si installé)
         EspeakProvider(),      # gratuit offline (fallback / dev)
         ElevenLabsProvider(),  # premium
     )

@@ -70,6 +70,20 @@ RUN set -eux; \
     test -x /opt/chromium/headless_shell; \
     chmod -R a+rX /opt/pw-browsers /opt/chromium
 
+# Piper TTS (voix off neuronale gratuite, offline) : binaire autonome + voix FR
+# féminine (siwis). Installés dans l'image → aucune clé, aucun download au runtime.
+RUN set -eux; \
+    mkdir -p /opt/piper/voices; \
+    curl -fsSL -o /tmp/piper.tar.gz \
+      https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_linux_x86_64.tar.gz; \
+    tar -xzf /tmp/piper.tar.gz -C /opt; rm /tmp/piper.tar.gz; \
+    curl -fsSL -o /opt/piper/voices/fr_FR-siwis-medium.onnx \
+      https://huggingface.co/rhasspy/piper-voices/resolve/main/fr/fr_FR/siwis/medium/fr_FR-siwis-medium.onnx; \
+    curl -fsSL -o /opt/piper/voices/fr_FR-siwis-medium.onnx.json \
+      https://huggingface.co/rhasspy/piper-voices/resolve/main/fr/fr_FR/siwis/medium/fr_FR-siwis-medium.onnx.json; \
+    chmod -R a+rX /opt/piper; \
+    test -x /opt/piper/piper
+
 # Remotion (node_modules + source) depuis le stage Node.
 COPY --from=remotion /app/remotion /app/remotion
 
