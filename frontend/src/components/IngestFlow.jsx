@@ -166,11 +166,6 @@ export default function IngestFlow() {
               </>
             )}
           </div>
-          <details className="raw">
-            <summary>Brief JSON</summary>
-            <pre>{JSON.stringify(brief, null, 2)}</pre>
-          </details>
-
           <div className="storyboard-block">
             <h3>2 · Storyboard</h3>
             <StoryboardViewer brief={brief} />

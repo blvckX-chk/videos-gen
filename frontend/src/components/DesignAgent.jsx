@@ -112,10 +112,15 @@ export default function DesignAgent({ onDone }) {
                   <button className="ghost small" onClick={() => removeStep(i)} title="Retirer">✕</button>
                 </div>
                 <div className="step-rationale">{s.rationale}</div>
-                <details className="raw">
-                  <summary>params</summary>
-                  <pre>{JSON.stringify(s.type === "template" ? s.params : { prompt: s.prompt, provider: s.provider }, null, 2)}</pre>
-                </details>
+                {s.type === "template" ? (
+                  <dl className="step-params">
+                    {Object.entries(s.params || {}).map(([k, v]) => (
+                      <div key={k}><dt>{k}</dt><dd>{String(v)}</dd></div>
+                    ))}
+                  </dl>
+                ) : (
+                  <p className="step-prompt">{s.prompt}</p>
+                )}
               </li>
             ))}
           </ol>

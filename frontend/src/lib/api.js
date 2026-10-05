@@ -36,6 +36,7 @@ async function json(res) {
 
 export const api = {
   providers: () => fetch(`${BASE}/providers`).then(json),
+  presets: () => fetch(`${BASE}/presets`, { cache: "no-store" }).then(json),
   enhance: (prompt) =>
     fetch(`${BASE}/enhance`, {
       method: "POST",

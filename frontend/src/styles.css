@@ -360,3 +360,38 @@ audio { filter: invert(0.92) hue-rotate(180deg); }
 .cv-cta { font-size: 12px; color: var(--accent-2); margin-top: 2px; }
 .chat-input { display: flex; gap: 8px; margin-top: 12px; align-items: flex-end; }
 .chat-input textarea { flex: 1; background: var(--panel-2); border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 10px 12px; font: inherit; resize: vertical; }
+
+/* ---- Presets de départ (tranche 1 reset UX) ---- */
+.preset-strip { margin: 4px 0 14px; }
+.preset-hint { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+.preset-grid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.preset-card {
+  position: relative; text-align: left; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 13px; background: var(--panel-2); color: var(--text);
+  display: flex; flex-direction: column; gap: 4px; overflow: hidden;
+  transition: border-color .15s, transform .12s;
+}
+.preset-card::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; opacity: .9;
+}
+.preset-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.preset-card:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+.preset-ic { font-size: 1.3rem; }
+.preset-label { font-weight: 600; font-size: 14px; }
+.preset-desc { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.preset-card.g1::before { background: linear-gradient(90deg,#B8451F,#D97B4F); }
+.preset-card.g2::before { background: linear-gradient(90deg,#1f6f6b,#51b3a9); }
+.preset-card.g3::before { background: linear-gradient(90deg,#6b2f7a,#c05a9a); }
+.preset-card.g4::before { background: linear-gradient(90deg,#8a6a1e,#d8b24a); }
+.preset-card.g5::before { background: linear-gradient(90deg,#1e4f8a,#4a9bd8); }
+
+/* ---- Rendu lisible des params d'étape (remplace le JSON brut) ---- */
+.step-params { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 6px 0 0; }
+.step-params > div { display: contents; }
+.step-params dt { color: var(--muted); font-size: 12px; }
+.step-params dd { margin: 0; font-size: 12px; color: var(--text); }
+.step-prompt { font-size: 13px; color: var(--text); margin: 6px 0 0; font-style: italic; }

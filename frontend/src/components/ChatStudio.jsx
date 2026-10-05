@@ -69,10 +69,13 @@ export default function ChatStudio() {
   const [busy, setBusy] = useState(false);
   const [documents, setDocuments] = useState([]);
   const [docId, setDocId] = useState("");
+  const [presets, setPresets] = useState([]);
   const endRef = useRef(null);
+  const started = messages.length > 1;   // l'utilisateur a déjà parlé
 
   useEffect(() => {
     fetch("/api/documents").then((r) => r.json()).then(setDocuments).catch(() => {});
+    api.presets().then(setPresets).catch(() => {});
   }, []);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
@@ -108,6 +111,22 @@ export default function ChatStudio() {
           </select>
         </label>
       </div>
+
+      {!started && presets.length > 0 && (
+        <div className="preset-strip">
+          <p className="preset-hint">Pour commencer — choisis un format :</p>
+          <div className="preset-grid">
+            {presets.map((p) => (
+              <button key={p.id} type="button" className={`preset-card ${p.accent}`}
+                onClick={() => setInput(p.prompt)} title={p.description}>
+                <span className="preset-ic" aria-hidden="true">{p.icon}</span>
+                <span className="preset-label">{p.label}</span>
+                <span className="preset-desc">{p.description}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="chat-log">
         {messages.map((m, i) => (

@@ -17,6 +17,7 @@ from .routers.copy import router as copy_router
 from .routers.design import router as design_router
 from .routers.identity import router as identity_router
 from .routers.ingest import router as ingest_router
+from .routers.presets import router as presets_router
 from .routers.render import router as render_router
 
 logging.basicConfig(level=logging.INFO)
@@ -59,6 +60,7 @@ app.include_router(campaign_router)
 app.include_router(identity_router)
 app.include_router(copy_router)
 app.include_router(chat_router)
+app.include_router(presets_router)
 
 logger = logging.getLogger("videos_gen.startup")
 
