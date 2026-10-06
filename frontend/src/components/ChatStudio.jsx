@@ -61,7 +61,7 @@ function ResultBlock({ result, onRunCampaign }) {
 }
 
 // Onglet 💬 KORA — console conversationnelle (hybride : gratuit + LLM si clé).
-export default function ChatStudio() {
+export default function ChatStudio({ seed }) {
   const [messages, setMessages] = useState([
     { role: "kora", text: "Salut 👋 Je suis KORA. Dis-moi ce que tu veux créer — une campagne, du copy, une carte, une affiche…" },
   ]);
@@ -77,6 +77,7 @@ export default function ChatStudio() {
     fetch("/api/documents").then((r) => r.json()).then(setDocuments).catch(() => {});
     api.presets().then(setPresets).catch(() => {});
   }, []);
+  useEffect(() => { if (seed) setInput(seed); }, [seed]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   async function send() {
