@@ -26,6 +26,7 @@ export default function MontageStudio() {
   const [job, setJob] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [perPhoto, setPerPhoto] = useState(2.5);   // durée par photo (albums)
   const poller = useRef(null);
 
   useEffect(() => {
@@ -68,20 +69,37 @@ export default function MontageStudio() {
     });
   }
 
-  // Proposition de départ : tous les visuels, dans l'ordre, réglages sensés.
+  // Proposition de départ : tous les visuels dans l'ordre d'import (ordre de
+  // l'album), et non du plus récent au plus ancien comme la médiathèque.
   function proposeFromLibrary() {
     if (!visual.length) { setError("Importe d'abord des médias dans la médiathèque."); return; }
     setError(null);
+    const chrono = [...visual].sort(
+      (a, b) => new Date(a.created_at) - new Date(b.created_at));
     setTl((t) => ({
       ...t,
-      clips: visual.slice(0, 12).map((m, i) => ({
+      clips: chrono.map((m) => ({
         media_id: m.id,
         in_point: 0,
-        duration: m.kind === "video" ? Math.min(4, Math.max(1, Math.round(m.duration || 4))) : 3,
-        transition: i === 0 ? "cut" : "fade",
+        duration: m.kind === "video"
+          ? Math.min(5, Math.max(1, Math.round(m.duration || 4)))
+          : perPhoto,
+        transition: "cut",
         ken_burns: m.kind !== "video",
         text: null,
       })),
+    }));
+  }
+
+  // Régler la durée de toutes les photos d'un coup (un album en compte beaucoup).
+  function applyPhotoDuration(v) {
+    setPerPhoto(v);
+    setTl((t) => ({
+      ...t,
+      clips: t.clips.map((c) => {
+        const m = media.find((x) => x.id === c.media_id);
+        return m && m.kind !== "video" ? { ...c, duration: v } : c;
+      }),
     }));
   }
 
@@ -168,7 +186,14 @@ export default function MontageStudio() {
         <button className="ghost" onClick={() => setPicking((p) => !p)}>
           {picking ? "Fermer" : "＋ Ajouter un plan"}
         </button>
-        <button className="ghost" onClick={proposeFromLibrary}>✨ Proposer un montage</button>
+        <button className="ghost" onClick={proposeFromLibrary}>
+          ✨ Proposer un montage ({visual.length} média{visual.length > 1 ? "s" : ""})
+        </button>
+        <label className="field small inline">
+          <span>Durée par photo</span>
+          <input type="number" min="0.5" max="15" step="0.5" value={perPhoto}
+            onChange={(e) => applyPhotoDuration(Number(e.target.value))} />
+        </label>
       </div>
 
       {picking && (

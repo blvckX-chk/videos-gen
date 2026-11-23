@@ -1,6 +1,7 @@
 """Import de médias dans la médiathèque (upload, ou reprise d'un fichier local)."""
 from __future__ import annotations
 
+import logging
 import shutil
 import subprocess
 from pathlib import Path
@@ -14,6 +15,8 @@ from .storage import (
     probe,
     save,
 )
+
+logger = logging.getLogger("videos_gen.media")
 
 
 def kind_for_ext(ext: str) -> MediaKind | None:
@@ -41,8 +44,29 @@ def _make_video_thumb(src: Path, dest: Path, at: float) -> bool:
         return False
 
 
+def _apply_exif_rotation(path: Path) -> None:
+    """Redresse une photo selon son orientation EXIF.
+
+    Les téléphones n'écrivent pas l'image tournée : ils posent une balise
+    d'orientation. FFmpeg ne l'applique pas aux images fixes — sans cette
+    correction, une photo prise à la verticale sort couchée dans le montage.
+    On redresse une fois pour toutes à l'import."""
+    try:
+        from PIL import Image, ImageOps
+        with Image.open(path) as im:
+            exif = im.getexif()
+            if exif.get(274, 1) in (1, None):      # 274 = Orientation
+                return
+            fixed = ImageOps.exif_transpose(im)
+            fixed.save(path, quality=95)
+    except Exception:  # noqa: BLE001 — une photo non redressée reste utilisable
+        logger.warning("Rotation EXIF non appliquée sur %s", path, exc_info=True)
+
+
 def _finalize(item: MediaItem, path: Path) -> MediaItem:
     """Complète les métadonnées après écriture du fichier."""
+    if item.kind == MediaKind.PHOTO:
+        _apply_exif_rotation(path)                 # avant la sonde : dimensions justes
     info = probe(path)
     item.width = info["width"]
     item.height = info["height"]

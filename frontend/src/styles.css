@@ -578,3 +578,9 @@ audio { filter: invert(0.92) hue-rotate(180deg); }
   color: var(--text); border-radius: 7px; padding: 5px 8px; font: inherit;
   font-size: 12px; }
 .clip-text::placeholder { color: var(--muted); opacity: .7; }
+
+/* Contrôle inline (durée par photo) */
+.field.small.inline { flex-direction: row; align-items: center; gap: 8px; }
+.field.small.inline input { width: 72px; background: var(--panel-2);
+  border: 1px solid var(--border); color: var(--text); border-radius: 8px;
+  padding: 7px 8px; font: inherit; font-size: 13px; }

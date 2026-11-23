@@ -186,15 +186,44 @@ async def concat_cut(parts: list[Path], out: Path) -> Path:
     return out
 
 
+#: Au-delà, on fond par groupes plutôt qu'en une seule commande : un album de
+#: plusieurs dizaines de photos saturerait un unique graphe de filtres.
+_MAX_XFADE_INPUTS = 12
+
+
 async def concat_dissolve(parts: list[Path], durations: list[float], out: Path,
                           *, fps: int, d: float = DISSOLVE) -> Path:
-    """Fondus enchaînés entre plans (xfade vidéo + acrossfade audio).
-
-    Les plans se chevauchent : la durée totale diminue d'autant, ce qui est le
-    comportement attendu d'un fondu enchaîné."""
+    """Fondus enchaînés entre plans, par groupes si le montage est long."""
     if len(parts) == 1:
         return await concat_cut(parts, out)
+    if len(parts) <= _MAX_XFADE_INPUTS:
+        await _dissolve_chain(parts, durations, out, fps=fps, d=d)
+        return out
 
+    groups: list[Path] = []
+    group_durations: list[float] = []
+    for gi in range(0, len(parts), _MAX_XFADE_INPUTS):
+        chunk = parts[gi:gi + _MAX_XFADE_INPUTS]
+        chunk_dur = durations[gi:gi + _MAX_XFADE_INPUTS]
+        if len(chunk) == 1:
+            groups.append(chunk[0])
+            group_durations.append(chunk_dur[0])
+            continue
+        gout = out.parent / f"{out.stem}.g{gi // _MAX_XFADE_INPUTS:03d}.mp4"
+        total = await _dissolve_chain(chunk, chunk_dur, gout, fps=fps, d=d)
+        groups.append(gout)
+        group_durations.append(total)
+
+    # Les groupes sont eux-mêmes enchaînés en fondu (récursif si besoin).
+    return await concat_dissolve(groups, group_durations, out, fps=fps, d=d)
+
+
+async def _dissolve_chain(parts: list[Path], durations: list[float], out: Path,
+                          *, fps: int, d: float) -> float:
+    """Une passe de fondus enchaînés (xfade vidéo + acrossfade audio).
+
+    Les plans se chevauchent : la durée totale diminue d'autant, ce qui est le
+    comportement attendu d'un fondu enchaîné. Renvoie la durée obtenue."""
     cmd: list[str] = ["ffmpeg", "-y"]
     for p in parts:
         cmd += ["-i", str(p)]
@@ -216,7 +245,7 @@ async def concat_dissolve(parts: list[Path], durations: list[float], out: Path,
             "-map", v_cur, "-map", a_cur,
             "-r", str(fps), *_VENC, *_AENC, *_MUX, str(out)]
     await _run(*cmd)
-    return out
+    return acc
 
 
 # ------------------------------------------------------------------ Audio --- #
