@@ -225,6 +225,23 @@ export const api = {
     del: (id) => fetch(`${BASE}/media/${id}`, { method: "DELETE" }).then(json),
   },
 
+  // Tri et curation des photos (déterministe + vision Tchavi)
+  curation: {
+    tchavi: () => fetch(`${BASE}/curation/tchavi`, { cache: "no-store" }).then(json),
+    analyze: (media_ids) =>
+      fetch(`${BASE}/curation/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ media_ids: media_ids || null }),
+      }).then(json),
+    scenario: (payload) =>
+      fetch(`${BASE}/curation/scenario`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(json),
+  },
+
   // Montage vidéo (timelines + rendu)
   montage: {
     timelines: () => fetch(`${BASE}/montage/timelines`, { cache: "no-store" }).then(json),

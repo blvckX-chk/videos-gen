@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     # Voix off premium (Slice 4)
     elevenlabs_api_key: str = ""
 
+    # Tchavi — passerelle IA compatible OpenAI (LLM, vision, image, vidéo,
+    # TTS, musique, transcription). Une seule clé pour 145 modèles.
+    tchavi_api_key: str = ""
+    tchavi_base_url: str = "https://tchavi.com/api/v1"
+    #: modèle par défaut (texte et vision)
+    tchavi_model: str = "claude-haiku-5-5"
+
     # Banques de médias libres (b-roll réel, gratuit). Clés API gratuites.
     pexels_api_key: str = ""
     pixabay_api_key: str = ""

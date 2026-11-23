@@ -16,6 +16,7 @@ from .routers.chat import router as chat_router
 from .routers.copy import router as copy_router
 from .routers.design import router as design_router
 from .routers.identity import router as identity_router
+from .routers.curation import router as curation_router
 from .routers.ingest import router as ingest_router
 from .routers.media import router as media_router
 from .routers.montage import router as montage_router
@@ -67,6 +68,7 @@ app.include_router(presets_router)
 app.include_router(stock_router)
 app.include_router(media_router)
 app.include_router(montage_router)
+app.include_router(curation_router)
 
 logger = logging.getLogger("videos_gen.startup")
 

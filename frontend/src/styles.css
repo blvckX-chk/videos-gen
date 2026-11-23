@@ -584,3 +584,11 @@ audio { filter: invert(0.92) hue-rotate(180deg); }
 .field.small.inline input { width: 72px; background: var(--panel-2);
   border: 1px solid var(--border); color: var(--text); border-radius: 8px;
   padding: 7px 8px; font: inherit; font-size: 13px; }
+
+/* Encart de curation (tri automatique / IA) */
+.curation-note { border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: 10px; padding: 10px 13px; margin-bottom: 14px; background: var(--panel-2); }
+.curation-note p { margin: 0; font-size: 13px; color: var(--text); }
+.curation-note details { margin-top: 8px; }
+.curation-note summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
+.rejected-list { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 12px; }

@@ -27,6 +27,9 @@ export default function MontageStudio() {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [perPhoto, setPerPhoto] = useState(2.5);   // durée par photo (albums)
+  const [theme, setTheme] = useState("");
+  const [curation, setCuration] = useState(null);  // {engine, rationale, rejected}
+  const [sorting, setSorting] = useState(false);
   const poller = useRef(null);
 
   useEffect(() => {
@@ -89,6 +92,34 @@ export default function MontageStudio() {
         text: null,
       })),
     }));
+  }
+
+  // Chaîne complète : tri déterministe (flou, doublons…) puis scénario.
+  async function sortAndPropose() {
+    setError(null); setSorting(true); setCuration(null);
+    try {
+      const sc = await api.curation.scenario({
+        theme: theme || null, per_photo: perPhoto,
+      });
+      if (!sc.clips.length) {
+        setError(sc.rationale || "Aucune photo exploitable.");
+      } else {
+        setTl((t) => ({
+          ...t,
+          name: sc.title || t.name,
+          clips: sc.clips.map((c) => ({
+            media_id: c.media_id,
+            in_point: 0,
+            duration: c.duration,
+            transition: "cut",
+            ken_burns: c.ken_burns,
+            text: c.text || null,
+          })),
+        }));
+      }
+      setCuration({ engine: sc.engine, rationale: sc.rationale, rejected: sc.rejected });
+    } catch (e) { setError(e.message); }
+    finally { setSorting(false); }
   }
 
   // Régler la durée de toutes les photos d'un coup (un album en compte beaucoup).
@@ -189,12 +220,45 @@ export default function MontageStudio() {
         <button className="ghost" onClick={proposeFromLibrary}>
           ✨ Proposer un montage ({visual.length} média{visual.length > 1 ? "s" : ""})
         </button>
+        <button className="primary" onClick={sortAndPropose} disabled={sorting}>
+          {sorting ? "Tri en cours…" : "🧠 Trier et proposer un scénario"}
+        </button>
+        <label className="field small inline">
+          <span>Thème</span>
+          <input type="text" value={theme} style={{ width: 170 }}
+            placeholder="récap de bootcamp"
+            onChange={(e) => setTheme(e.target.value)} />
+        </label>
         <label className="field small inline">
           <span>Durée par photo</span>
           <input type="number" min="0.5" max="15" step="0.5" value={perPhoto}
             onChange={(e) => applyPhotoDuration(Number(e.target.value))} />
         </label>
       </div>
+
+      {curation && (
+        <div className="curation-note">
+          <p>
+            <span className={`badge ${curation.engine === "tchavi" ? "succeeded" : ""}`}>
+              {curation.engine === "tchavi" ? "curation IA" : "tri automatique"}
+            </span>{" "}
+            {curation.rationale}
+          </p>
+          {curation.rejected?.length > 0 && (
+            <details>
+              <summary>{curation.rejected.length} photo(s) écartée(s)</summary>
+              <ul className="rejected-list">
+                {curation.rejected.map((r) => (
+                  <li key={r.media_id}>
+                    {(media.find((m) => m.id === r.media_id)?.name) || r.media_id}
+                    {" — "}{r.issues.join(", ") || "qualité insuffisante"}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </div>
+      )}
 
       {picking && (
         <div className="mt-picker">
