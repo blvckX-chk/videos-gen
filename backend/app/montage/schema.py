@@ -35,14 +35,16 @@ class Transition(str, Enum):
 
 class FitMode(str, Enum):
     """Comment un média au mauvais ratio entre dans le cadre."""
-    COVER = "cover"      # remplit le cadre en recadrant — rendu pro (défaut)
-    CONTAIN = "contain"  # conserve tout, ajoute des bandes (letterbox)
+    BLUR = "blur"        # image entière sur fond flouté — rien n'est coupé (défaut)
+    COVER = "cover"      # remplit en recadrant, centré sur les visages
+    CONTAIN = "contain"  # conserve tout, ajoute des bandes noires
 
 
 class TransitionStyle(str, Enum):
     """Enchaînement entre les plans, appliqué à tout le montage."""
     CUT = "cut"              # coupes franches (assemblage rapide, sans ré-encodage)
     DISSOLVE = "dissolve"    # fondus enchaînés (les plans se chevauchent)
+    VARIED = "varied"        # transitions variées (glissements, volets, cercle)
 
 
 class TimelineClip(BaseModel):
@@ -65,9 +67,9 @@ class Timeline(BaseModel):
     format: VideoFormat = VideoFormat.VERTICAL
     fps: int = 30
     #: remplir le cadre (recadrage) plutôt que des bandes noires
-    fit_mode: FitMode = FitMode.COVER
+    fit_mode: FitMode = FitMode.BLUR
     #: enchaînement entre plans, appliqué à l'ensemble du montage
-    transition_style: TransitionStyle = TransitionStyle.DISSOLVE
+    transition_style: TransitionStyle = TransitionStyle.VARIED
     clips: list[TimelineClip] = []
     #: piste son : musique de fond (média audio de la médiathèque)
     music_media_id: Optional[str] = None

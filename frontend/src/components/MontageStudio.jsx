@@ -12,7 +12,7 @@ const newTimeline = () => ({
   name: "Montage",
   format: "9:16",
   fps: 30,
-  fit_mode: "cover",             // remplir le cadre (rendu pro)
+  fit_mode: "blur",              // image entiere sur fond floute
   transition_style: "dissolve",  // fondus enchaînés entre les plans
   clips: [],
   music_media_id: null,
@@ -30,10 +30,13 @@ export default function MontageStudio() {
   const [theme, setTheme] = useState("");
   const [curation, setCuration] = useState(null);  // {engine, rationale, rejected}
   const [sorting, setSorting] = useState(false);
+  const [role, setRole] = useState(null);
+  const [noWatermark, setNoWatermark] = useState(false);
   const poller = useRef(null);
 
   useEffect(() => {
     api.media.list().then(setMedia).catch(() => {});
+    api.identity.me().then((m) => setRole(m.role)).catch(() => {});
     return () => clearInterval(poller.current);
   }, []);
 
@@ -139,7 +142,10 @@ export default function MontageStudio() {
     if (!tl.clips.length) { setError("Ajoute au moins un plan."); return; }
     setError(null); setBusy(true); setJob(null);
     try {
-      const payload = { timeline: { ...tl, narration: tl.narration || null } };
+      const payload = {
+        timeline: { ...tl, narration: tl.narration || null },
+        remove_watermark: noWatermark,
+      };
       const j = await api.montage.render(payload);
       setJob(j);
       poller.current = setInterval(async () => {
@@ -182,23 +188,29 @@ export default function MontageStudio() {
         <div className="field small">
           <span>Enchaînements</span>
           <div className="seg">
+            <button type="button" className={tl.transition_style === "varied" ? "on" : ""}
+              title="Alterne fondus, glissements, volets — évite la monotonie"
+              onClick={() => setTl({ ...tl, transition_style: "varied" })}>Variées</button>
             <button type="button" className={tl.transition_style === "dissolve" ? "on" : ""}
-              title="Les plans se fondent l'un dans l'autre"
-              onClick={() => setTl({ ...tl, transition_style: "dissolve" })}>Fondu enchaîné</button>
+              title="Uniquement des fondus enchaînés"
+              onClick={() => setTl({ ...tl, transition_style: "dissolve" })}>Fondu</button>
             <button type="button" className={tl.transition_style === "cut" ? "on" : ""}
               title="Coupes franches (rendu plus rapide)"
-              onClick={() => setTl({ ...tl, transition_style: "cut" })}>Coupe franche</button>
+              onClick={() => setTl({ ...tl, transition_style: "cut" })}>Coupe</button>
           </div>
         </div>
         <div className="field small">
           <span>Cadrage</span>
           <div className="seg">
+            <button type="button" className={tl.fit_mode === "blur" ? "on" : ""}
+              title="Image entière sur fond flouté — rien n'est coupé, pas de bandes noires"
+              onClick={() => setTl({ ...tl, fit_mode: "blur" })}>Fond flouté</button>
             <button type="button" className={tl.fit_mode === "cover" ? "on" : ""}
-              title="Remplit le cadre en recadrant — rendu professionnel"
+              title="Remplit le cadre en recadrant, centré sur les visages"
               onClick={() => setTl({ ...tl, fit_mode: "cover" })}>Remplir</button>
             <button type="button" className={tl.fit_mode === "contain" ? "on" : ""}
               title="Conserve toute l'image, ajoute des bandes noires"
-              onClick={() => setTl({ ...tl, fit_mode: "contain" })}>Bandes noires</button>
+              onClick={() => setTl({ ...tl, fit_mode: "contain" })}>Bandes</button>
           </div>
         </div>
       </div>
@@ -345,6 +357,14 @@ export default function MontageStudio() {
       </label>
 
       {error && <div className="banner error" style={{ marginTop: 12 }}>{error}</div>}
+
+      {(role === "admin" || role === "premium") && (
+        <label className="clip-check" style={{ marginTop: 10 }}>
+          <input type="checkbox" checked={noWatermark}
+            onChange={(e) => setNoWatermark(e.target.checked)} />
+          Retirer le filigrane blvckUnlimited
+        </label>
+      )}
 
       <button className="primary" onClick={render} disabled={busy || !tl.clips.length}
         style={{ marginTop: 14 }}>

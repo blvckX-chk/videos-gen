@@ -17,7 +17,7 @@ import logging
 from ..media import storage as media_store
 from ..media.schema import MediaKind
 from ..tchavi import client as tchavi
-from .analyze import analyze_photo, mark_duplicates
+from .analyze import analyze_photo, apply_relative_sharpness, mark_duplicates
 from .schema import PhotoAnalysis, Scenario, ScenarioClip
 
 logger = logging.getLogger("videos_gen.curation")
@@ -50,6 +50,9 @@ def analyze(media_ids: list[str] | None = None) -> list[PhotoAnalysis]:
         a, h = analyze_photo(path, m.id)
         analyses.append(a)
         hashes.append(h)
+    # Le flou s'apprécie par rapport à l'album avant d'écarter les doublons :
+    # inutile de garder la « meilleure » d'une rafale si elle est floue.
+    apply_relative_sharpness(analyses)
     mark_duplicates(analyses, hashes)
     return analyses
 

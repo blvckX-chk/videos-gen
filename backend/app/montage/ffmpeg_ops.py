@@ -31,6 +31,13 @@ _MUX = ["-movflags", "+faststart"]
 #: Durée d'un fondu enchaîné entre deux plans.
 DISSOLVE = 0.45
 
+#: Transitions utilisées en mode « varié », dans cet ordre, en boucle.
+#: Choisies pour rester sobres : un récap doit respirer, pas clignoter.
+VARIED_TRANSITIONS = (
+    "fade", "slideleft", "smoothup", "circleopen",
+    "fade", "slideright", "smoothdown", "wipeleft",
+)
+
 _FONTS = (
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
     "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
@@ -73,21 +80,39 @@ async def has_audio(path: Path) -> bool:
 
 
 # --------------------------------------------------------------- Filtres --- #
-def _frame_filter(w: int, h: int, fit: str) -> str:
-    """Mise au format. `cover` remplit le cadre en recadrant (défaut, rendu pro) ;
-    `contain` conserve tout en ajoutant des bandes."""
+def _frame_filter(w: int, h: int, fit: str,
+                  focus: tuple[float, float] = (0.5, 0.5)) -> str:
+    """Mise au format d'un média au mauvais ratio.
+
+    - `blur` (défaut) : l'image entière est posée sur un fond flouté tiré
+      d'elle-même. **Rien n'est coupé et il n'y a pas de bandes noires** —
+      c'est la réponse aux photos de groupe où le recadrage perdait des gens.
+    - `cover` : remplit le cadre en recadrant, centré sur `focus` (barycentre
+      des visages quand il y en a) plutôt qu'au milieu de l'image.
+    - `contain` : conserve tout, avec des bandes noires.
+    """
     if fit == "contain":
         return (f"scale={w}:{h}:force_original_aspect_ratio=decrease,"
                 f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2")
+    if fit == "blur":
+        return (
+            f"split=2[bg][fg];"
+            f"[bg]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},"
+            f"gblur=sigma=28,eq=brightness=-0.07[bgb];"
+            f"[fg]scale={w}:{h}:force_original_aspect_ratio=decrease[fgs];"
+            f"[bgb][fgs]overlay=(W-w)/2:(H-h)/2"
+        )
+    fx, fy = focus
     return (f"scale={w}:{h}:force_original_aspect_ratio=increase,"
-            f"crop={w}:{h}")
+            f"crop={w}:{h}:(iw-ow)*{fx:.3f}:(ih-oh)*{fy:.3f}")
 
 
-def _ken_burns_filter(w: int, h: int, fps: int, duration: float, fit: str) -> str:
+def _ken_burns_filter(w: int, h: int, fps: int, duration: float, fit: str,
+                      focus: tuple[float, float] = (0.5, 0.5)) -> str:
     """Zoom lent sur une image fixe : évite l'effet diaporama."""
     frames = max(1, int(round(duration * fps)))
     big_w, big_h = w * 2, h * 2
-    base = _frame_filter(big_w, big_h, fit)
+    base = _frame_filter(big_w, big_h, fit, focus)
     return (f"{base},zoompan=z='min(zoom+0.0012,1.12)':"
             f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
             f"d={frames}:s={w}x{h}:fps={fps}")
@@ -144,16 +169,22 @@ async def ensure_audio(path: Path, duration: float) -> None:
 # ---------------------------------------------------------- Normalisation --- #
 async def normalize_photo(src: Path, out: Path, *, w: int, h: int, fps: int,
                           duration: float, ken_burns: bool = False,
-                          fade_in: bool = False, fit: str = "cover",
-                          text: str | None = None) -> Path:
+                          fade_in: bool = False, fit: str = "blur",
+                          text: str | None = None,
+                          focus: tuple[float, float] = (0.5, 0.5)) -> Path:
     """Photo → plan vidéo de `duration` secondes (avec piste de silence).
 
     La durée est bornée en nombre d'images (`-frames:v`) et non par `-t` : avec
     `zoompan`, qui émet d images pour CHAQUE image reçue, une entrée en boucle
     multiplierait la durée (bug observé : 2 s rendues en 100 s)."""
     frames = max(1, int(round(duration * fps)))
-    vf = (_ken_burns_filter(w, h, fps, duration, fit) if ken_burns
-          else f"{_frame_filter(w, h, fit)},fps={fps}")
+    # En fond flouté, le zoom est désactivé : la promesse du mode est que
+    # l'image entière reste visible, or un zoom la recadre.
+    if ken_burns and fit != "blur":
+        vf = _ken_burns_filter(w, h, fps, duration, fit, focus)
+    else:
+        ken_burns = False
+        vf = f"{_frame_filter(w, h, fit, focus)},fps={fps}"
     vf += ",setsar=1,format=yuv420p"
     if text:
         vf += "," + _title_filter(text, w, h)
@@ -178,10 +209,11 @@ async def normalize_photo(src: Path, out: Path, *, w: int, h: int, fps: int,
 
 async def normalize_video(src: Path, out: Path, *, w: int, h: int, fps: int,
                           duration: float, in_point: float = 0.0,
-                          fade_in: bool = False, fit: str = "cover",
-                          text: str | None = None) -> Path:
+                          fade_in: bool = False, fit: str = "blur",
+                          text: str | None = None,
+                          focus: tuple[float, float] = (0.5, 0.5)) -> Path:
     """Extrait d'une vidéo normalisé au format cible, **son conservé**."""
-    vf = f"{_frame_filter(w, h, fit)},fps={fps},setsar=1,format=yuv420p"
+    vf = f"{_frame_filter(w, h, fit, focus)},fps={fps},setsar=1,format=yuv420p"
     if text:
         vf += "," + _title_filter(text, w, h)
     if fade_in:
@@ -232,12 +264,16 @@ _MAX_XFADE_INPUTS = 12
 
 
 async def concat_dissolve(parts: list[Path], durations: list[float], out: Path,
-                          *, fps: int, d: float = DISSOLVE) -> Path:
-    """Fondus enchaînés entre plans, par groupes si le montage est long."""
+                          *, fps: int, d: float = DISSOLVE,
+                          varied: bool = False) -> Path:
+    """Enchaînements entre plans, par groupes si le montage est long.
+
+    `varied` fait tourner les transitions (glissements, volets, ouverture en
+    cercle) au lieu du seul fondu, pour éviter la monotonie."""
     if len(parts) == 1:
         return await concat_cut(parts, out)
     if len(parts) <= _MAX_XFADE_INPUTS:
-        await _dissolve_chain(parts, durations, out, fps=fps, d=d)
+        await _dissolve_chain(parts, durations, out, fps=fps, d=d, varied=varied)
         return out
 
     groups: list[Path] = []
@@ -250,16 +286,19 @@ async def concat_dissolve(parts: list[Path], durations: list[float], out: Path,
             group_durations.append(chunk_dur[0])
             continue
         gout = out.parent / f"{out.stem}.g{gi // _MAX_XFADE_INPUTS:03d}.mp4"
-        total = await _dissolve_chain(chunk, chunk_dur, gout, fps=fps, d=d)
+        total = await _dissolve_chain(chunk, chunk_dur, gout, fps=fps, d=d,
+                                      varied=varied, offset_index=gi)
         groups.append(gout)
         group_durations.append(total)
 
     # Les groupes sont eux-mêmes enchaînés en fondu (récursif si besoin).
-    return await concat_dissolve(groups, group_durations, out, fps=fps, d=d)
+    return await concat_dissolve(groups, group_durations, out, fps=fps, d=d,
+                                 varied=varied)
 
 
 async def _dissolve_chain(parts: list[Path], durations: list[float], out: Path,
-                          *, fps: int, d: float) -> float:
+                          *, fps: int, d: float, varied: bool = False,
+                          offset_index: int = 0) -> float:
     """Une passe de fondus enchaînés (xfade vidéo + acrossfade audio).
 
     Les plans se chevauchent : la durée totale diminue d'autant, ce qui est le
@@ -275,7 +314,9 @@ async def _dissolve_chain(parts: list[Path], durations: list[float], out: Path,
         # le fondu ne peut dépasser la moitié du plus court des deux plans
         di = max(0.1, min(d, durations[i] / 2, durations[i - 1] / 2))
         offset = max(0.0, acc - di)
-        fc.append(f"{v_cur}[{i}:v]xfade=transition=fade:duration={di:.3f}:"
+        kind = (VARIED_TRANSITIONS[(offset_index + i - 1) % len(VARIED_TRANSITIONS)]
+                if varied else "fade")
+        fc.append(f"{v_cur}[{i}:v]xfade=transition={kind}:duration={di:.3f}:"
                   f"offset={offset:.3f}[v{i}]")
         fc.append(f"{a_cur}[{i}:a]acrossfade=d={di:.3f}:c1=tri:c2=tri[a{i}]")
         v_cur, a_cur = f"[v{i}]", f"[a{i}]"

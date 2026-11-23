@@ -98,6 +98,12 @@ async def run_montage(job: MontageJob, timeline: Timeline) -> None:
                 raise ValueError(f"Fichier manquant pour le plan {i + 1}.")
 
             part = work / f"{i:04d}.mp4"
+            # Cadrer sur les gens plutôt qu'au centre de l'image.
+            try:
+                from ..curation.analyze import face_focus
+                focus = face_focus(src)
+            except Exception:  # noqa: BLE001 — le centrage par défaut reste valable
+                focus = (0.5, 0.5)
             # Le fondu d'ouverture n'a de sens que sur le premier plan ; entre
             # deux plans, c'est le fondu enchaîné qui s'en charge.
             fade_in = clip.transition == Transition.FADE and i == 0
@@ -105,12 +111,14 @@ async def run_montage(job: MontageJob, timeline: Timeline) -> None:
                 await ops.normalize_photo(src, part, w=w, h=h, fps=fps,
                                           duration=clip.duration,
                                           ken_burns=clip.ken_burns,
-                                          fade_in=fade_in, fit=fit, text=clip.text)
+                                          fade_in=fade_in, fit=fit, text=clip.text,
+                                          focus=focus)
             elif media.kind == MediaKind.VIDEO:
                 await ops.normalize_video(src, part, w=w, h=h, fps=fps,
                                           duration=clip.duration,
                                           in_point=clip.in_point,
-                                          fade_in=fade_in, fit=fit, text=clip.text)
+                                          fade_in=fade_in, fit=fit, text=clip.text,
+                                          focus=focus)
             else:
                 raise ValueError(f"Le plan {i + 1} n'est ni une photo ni une vidéo.")
             parts.append(part)
@@ -121,12 +129,14 @@ async def run_montage(job: MontageJob, timeline: Timeline) -> None:
             job.touch(); save_job(job)
 
         # 2) Assembler — fondus enchaînés ou coupes franches
-        dissolve = timeline.transition_style == TransitionStyle.DISSOLVE
-        job.step = "Fondus enchaînés" if dissolve else "Assemblage"
+        varied = timeline.transition_style == TransitionStyle.VARIED
+        dissolve = varied or timeline.transition_style == TransitionStyle.DISSOLVE
+        job.step = ("Transitions" if varied else
+                    "Fondus enchaînés" if dissolve else "Assemblage")
         job.touch(); save_job(job)
         bed = work / "bed.mp4"
         if dissolve and len(parts) > 1:
-            await ops.concat_dissolve(parts, durations, bed, fps=fps)
+            await ops.concat_dissolve(parts, durations, bed, fps=fps, varied=varied)
         else:
             await ops.concat_cut(parts, bed)
 

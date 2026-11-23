@@ -101,6 +101,51 @@ def _score(a: PhotoAnalysis) -> float:
     return round(raw * 100, 1)
 
 
+def face_focus(path: Path) -> tuple[float, float]:
+    """Centre normalisé (0-1) des visages détectés, pour recadrer sur les gens.
+
+    Un recadrage centré coupe les personnes placées sur les bords d'une photo
+    de groupe ; on vise plutôt le barycentre des visages. (0.5, 0.5) si aucun
+    visage n'est trouvé — comportement centré d'origine."""
+    det = _faces_detector()
+    img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+    if det is None or img is None:
+        return 0.5, 0.5
+    h, w = img.shape[:2]
+    scale = min(1.0, 900 / max(h, w))
+    small = cv2.resize(img, None, fx=scale, fy=scale) if scale < 1 else img
+    faces = det.detectMultiScale(small, scaleFactor=1.15, minNeighbors=5,
+                                 minSize=(28, 28))
+    if len(faces) == 0:
+        return 0.5, 0.5
+    sh, sw = small.shape[:2]
+    xs = [fx + fw / 2 for fx, _, fw, _ in faces]
+    ys = [fy + fh / 2 for _, fy, _, fh in faces]
+    cx = float(np.mean(xs)) / sw
+    cy = float(np.mean(ys)) / sh
+    # on borne pour éviter un cadrage collé au bord
+    return min(0.85, max(0.15, cx)), min(0.85, max(0.15, cy))
+
+
+def apply_relative_sharpness(analyses: list[PhotoAnalysis]) -> None:
+    """Déclasse le flou **par rapport à l'album**, pas à un seuil absolu.
+
+    La netteté mesurée dépend de l'appareil et de la scène : un seuil fixe
+    laisse passer des photos floues d'un bon capteur et rejette des photos
+    nettes d'un capteur modeste. On compare donc chaque photo à la médiane de
+    l'album."""
+    values = [a.sharpness for a in analyses if a.sharpness > 0]
+    if len(values) < 4:
+        return
+    median = float(np.median(values))
+    threshold = max(SHARPNESS_BLUR, median * 0.5)
+    for a in analyses:
+        if a.sharpness < threshold and "flou" not in a.issues:
+            a.issues.append("flou")
+            a.keep = False
+            a.score = round(a.score * 0.5, 1)
+
+
 def mark_duplicates(analyses: list[PhotoAnalysis], hashes: list[int | None]) -> None:
     """Regroupe les quasi-doublons : on garde le mieux noté de chaque rafale.
 
