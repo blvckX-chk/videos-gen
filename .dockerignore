@@ -1,4 +1,12 @@
 # Contexte de build minimal (accélère et évite de copier des artefacts lourds).
+
+# Secrets : JAMAIS dans l'image. Les couches Docker sont lisibles par quiconque
+# obtient l'image, et toucher au .env invaliderait la couche de code à chaque
+# changement de clé. Compose lit backend/.env depuis l'hôte au démarrage
+# (env_file), donc l'exclure ici ne retire aucune configuration.
+**/.env
+!**/.env.example
+
 **/.git
 **/.venv
 **/venv
