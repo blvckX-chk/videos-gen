@@ -46,6 +46,19 @@ async def _run(*cmd: str) -> None:
         raise RuntimeError(f"ffmpeg: {tail}")
 
 
+async def duration_of(path: Path) -> float | None:
+    """Durée du média en secondes, ou None si indéterminable."""
+    proc = await asyncio.create_subprocess_exec(
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "json", str(path),
+        stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
+    out, _ = await proc.communicate()
+    try:
+        return float(json.loads(out or b"{}")["format"]["duration"])
+    except Exception:  # noqa: BLE001
+        return None
+
+
 async def has_audio(path: Path) -> bool:
     """Le fichier porte-t-il une piste audio exploitable ?"""
     proc = await asyncio.create_subprocess_exec(
@@ -131,10 +144,14 @@ async def normalize_photo(src: Path, out: Path, *, w: int, h: int, fps: int,
     cmd = ["ffmpeg", "-y"]
     if not ken_burns:
         cmd += ["-loop", "1"]
+    # Bornage explicite (-t) plutôt que -shortest : avec une piste de silence
+    # infinie, FFmpeg 5.1 supprime purement l'audio là où la 6.x le conserve.
+    # Le montage se retrouvait alors sans son selon la version installée.
     cmd += ["-i", str(src), *_silence_input(),
             "-map", "0:v:0", "-map", "1:a:0",
             "-vf", vf, "-frames:v", str(frames), "-r", str(fps),
-            *_VENC, *_AENC, "-shortest", *_MUX, str(out)]
+            "-t", f"{duration:.3f}",
+            *_VENC, *_AENC, *_MUX, str(out)]
     await _run(*cmd)
     return out
 
@@ -160,8 +177,10 @@ async def normalize_video(src: Path, out: Path, *, w: int, h: int, fps: int,
         cmd += ["-map", "0:v:0", "-map", "1:a:0"]
     else:
         cmd += ["-map", "0:v:0", "-map", "0:a:0"]
+    # -t borne la sortie (voir normalize_photo : -shortest n'est pas fiable
+    # d'une version de FFmpeg à l'autre quand une piste de silence est ajoutée).
     cmd += ["-t", f"{duration:.3f}", "-vf", vf, "-r", str(fps),
-            *_VENC, *_AENC, "-shortest", *_MUX, str(out)]
+            *_VENC, *_AENC, *_MUX, str(out)]
     await _run(*cmd)
     return out
 
@@ -257,6 +276,16 @@ async def mix_tracks(video_in: Path, out: Path, *, voice: Path | None = None,
     comme le ferait un monteur. Sortie calée sur ‑14 LUFS (cible sociale)."""
     cmd: list[str] = ["ffmpeg", "-y", "-i", str(video_in)]
     idx = 1
+
+    # Garde-fou : si la vidéo assemblée n'a pas de piste son (selon la version
+    # de FFmpeg ou la nature des sources), on en fabrique une silencieuse.
+    # Sans cela le filtre [0:a] échoue et tout le montage est perdu au mixage.
+    base_audio = "[0:a]"
+    if not await has_audio(video_in):
+        cmd += _silence_input()
+        base_audio = f"[{idx}:a]"
+        idx += 1
+
     voice_i = music_i = None
     if voice is not None:
         cmd += ["-i", str(voice)]; voice_i = idx; idx += 1
@@ -264,7 +293,7 @@ async def mix_tracks(video_in: Path, out: Path, *, voice: Path | None = None,
         # la musique boucle si elle est plus courte que la vidéo
         cmd += ["-stream_loop", "-1", "-i", str(music)]; music_i = idx; idx += 1
 
-    fc: list[str] = ["[0:a]volume=1.0[src]"]
+    fc: list[str] = [f"{base_audio}volume=1.0[src]"]
     sources = ["[src]"]
 
     if voice_i is not None:
@@ -290,7 +319,12 @@ async def mix_tracks(video_in: Path, out: Path, *, voice: Path | None = None,
 
     cmd += ["-filter_complex", ";".join(fc),
             "-map", "0:v:0", "-map", "[aout]",
-            "-c:v", "copy", *_AENC, "-shortest", *_MUX, str(out)]
+            "-c:v", "copy", *_AENC]
+    # Bornage sur la durée réelle de la vidéo : les pistes ajoutées (silence,
+    # musique bouclée) sont infinies et déborderaient sinon.
+    video_duration = await duration_of(video_in)
+    cmd += ["-t", f"{video_duration:.3f}"] if video_duration else ["-shortest"]
+    cmd += [*_MUX, str(out)]
     await _run(*cmd)
     return out
 
