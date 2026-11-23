@@ -122,6 +122,25 @@ def _silence_input() -> list[str]:
     return ["-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000"]
 
 
+async def ensure_audio(path: Path, duration: float) -> None:
+    """Garantit qu'un plan porte une piste son, quelle que soit la version
+    de FFmpeg.
+
+    Les versions ne se comportent pas pareil quand on ajoute une piste de
+    silence à une image fixe : certaines l'écrivent, d'autres la suppriment.
+    Plutôt que de parier sur le comportement, on **vérifie** et on répare —
+    la vidéo est simplement recopiée, sans ré-encodage ni perte."""
+    if await has_audio(path):
+        return
+    repaired = path.with_name(path.stem + ".withaudio.mp4")
+    await _run("ffmpeg", "-y", "-i", str(path), *_silence_input(),
+               "-map", "0:v:0", "-map", "1:a:0",
+               "-c:v", "copy", *_AENC, "-t", f"{duration:.3f}",
+               *_MUX, str(repaired))
+    repaired.replace(path)
+    logger.info("Piste son ajoutée au plan %s (FFmpeg l'avait omise)", path.name)
+
+
 # ---------------------------------------------------------- Normalisation --- #
 async def normalize_photo(src: Path, out: Path, *, w: int, h: int, fps: int,
                           duration: float, ken_burns: bool = False,
@@ -153,6 +172,7 @@ async def normalize_photo(src: Path, out: Path, *, w: int, h: int, fps: int,
             "-t", f"{duration:.3f}",
             *_VENC, *_AENC, *_MUX, str(out)]
     await _run(*cmd)
+    await ensure_audio(out, duration)
     return out
 
 
@@ -182,6 +202,7 @@ async def normalize_video(src: Path, out: Path, *, w: int, h: int, fps: int,
     cmd += ["-t", f"{duration:.3f}", "-vf", vf, "-r", str(fps),
             *_VENC, *_AENC, *_MUX, str(out)]
     await _run(*cmd)
+    await ensure_audio(out, duration)
     return out
 
 
