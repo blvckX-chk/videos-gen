@@ -12,6 +12,8 @@ const newTimeline = () => ({
   name: "Montage",
   format: "9:16",
   fps: 30,
+  fit_mode: "cover",             // remplir le cadre (rendu pro)
+  transition_style: "dissolve",  // fondus enchaînés entre les plans
   clips: [],
   music_media_id: null,
   narration: "",
@@ -128,7 +130,33 @@ export default function MontageStudio() {
             ))}
           </div>
         </div>
+        <div className="field small">
+          <span>Enchaînements</span>
+          <div className="seg">
+            <button type="button" className={tl.transition_style === "dissolve" ? "on" : ""}
+              title="Les plans se fondent l'un dans l'autre"
+              onClick={() => setTl({ ...tl, transition_style: "dissolve" })}>Fondu enchaîné</button>
+            <button type="button" className={tl.transition_style === "cut" ? "on" : ""}
+              title="Coupes franches (rendu plus rapide)"
+              onClick={() => setTl({ ...tl, transition_style: "cut" })}>Coupe franche</button>
+          </div>
+        </div>
+        <div className="field small">
+          <span>Cadrage</span>
+          <div className="seg">
+            <button type="button" className={tl.fit_mode === "cover" ? "on" : ""}
+              title="Remplit le cadre en recadrant — rendu professionnel"
+              onClick={() => setTl({ ...tl, fit_mode: "cover" })}>Remplir</button>
+            <button type="button" className={tl.fit_mode === "contain" ? "on" : ""}
+              title="Conserve toute l'image, ajoute des bandes noires"
+              onClick={() => setTl({ ...tl, fit_mode: "contain" })}>Bandes noires</button>
+          </div>
+        </div>
       </div>
+      <p className="muted small-text" style={{ marginTop: -4 }}>
+        Le son de tes rushes est conservé et mixé avec la musique et la voix off,
+        puis normalisé au niveau des plateformes (−14 LUFS).
+      </p>
 
       {/* ----- Plans ----- */}
       <div className="mt-head">
@@ -179,13 +207,6 @@ export default function MontageStudio() {
                         s
                       </label>
                     )}
-                    <label>entrée
-                      <select value={c.transition}
-                        onChange={(e) => patchClip(i, { transition: e.target.value })}>
-                        <option value="cut">coupe</option>
-                        <option value="fade">fondu</option>
-                      </select>
-                    </label>
                     {m?.kind === "photo" && (
                       <label className="clip-check">
                         <input type="checkbox" checked={c.ken_burns}
@@ -193,7 +214,17 @@ export default function MontageStudio() {
                         zoom lent
                       </label>
                     )}
+                    {i === 0 && (
+                      <label className="clip-check" title="Ouvrir la vidéo en fondu depuis le noir">
+                        <input type="checkbox" checked={c.transition === "fade"}
+                          onChange={(e) => patchClip(i, { transition: e.target.checked ? "fade" : "cut" })} />
+                        ouvrir en fondu
+                      </label>
+                    )}
                   </div>
+                  <input className="clip-text" type="text" value={c.text || ""}
+                    placeholder="Titre incrusté sur ce plan (optionnel)"
+                    onChange={(e) => patchClip(i, { text: e.target.value || null })} />
                 </div>
                 <div className="clip-ops">
                   <button className="ghost small" onClick={() => moveClip(i, -1)} disabled={i === 0} title="Monter">↑</button>

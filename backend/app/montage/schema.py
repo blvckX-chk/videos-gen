@@ -33,6 +33,18 @@ class Transition(str, Enum):
     FADE = "fade"        # fondu d'ouverture sur le plan
 
 
+class FitMode(str, Enum):
+    """Comment un média au mauvais ratio entre dans le cadre."""
+    COVER = "cover"      # remplit le cadre en recadrant — rendu pro (défaut)
+    CONTAIN = "contain"  # conserve tout, ajoute des bandes (letterbox)
+
+
+class TransitionStyle(str, Enum):
+    """Enchaînement entre les plans, appliqué à tout le montage."""
+    CUT = "cut"              # coupes franches (assemblage rapide, sans ré-encodage)
+    DISSOLVE = "dissolve"    # fondus enchaînés (les plans se chevauchent)
+
+
 class TimelineClip(BaseModel):
     """Un plan : un média (photo ou vidéo) placé sur la timeline."""
     media_id: str
@@ -52,6 +64,10 @@ class Timeline(BaseModel):
     name: str = "Montage"
     format: VideoFormat = VideoFormat.VERTICAL
     fps: int = 30
+    #: remplir le cadre (recadrage) plutôt que des bandes noires
+    fit_mode: FitMode = FitMode.COVER
+    #: enchaînement entre plans, appliqué à l'ensemble du montage
+    transition_style: TransitionStyle = TransitionStyle.DISSOLVE
     clips: list[TimelineClip] = []
     #: piste son : musique de fond (média audio de la médiathèque)
     music_media_id: Optional[str] = None

@@ -572,3 +572,9 @@ audio { filter: invert(0.92) hue-rotate(180deg); }
   .clip-card { flex-wrap: wrap; }
   .clip-body { flex-basis: 100%; }
 }
+
+/* Titre incrusté par plan */
+.clip-text { width: 100%; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); border-radius: 7px; padding: 5px 8px; font: inherit;
+  font-size: 12px; }
+.clip-text::placeholder { color: var(--muted); opacity: .7; }

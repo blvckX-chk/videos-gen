@@ -15,9 +15,9 @@ from pathlib import Path
 from ..media import storage as media_store
 from ..media.schema import MediaKind
 from ..render.assets import storage_root
-from ..render.postprod import postprocess
 from . import ffmpeg_ops as ops
-from .schema import FORMAT_DIMS, MontageJob, MontageJobStatus, Timeline, Transition
+from .schema import (FORMAT_DIMS, MontageJob, MontageJobStatus, Timeline,
+                     Transition, TransitionStyle)
 from .storage import save_job
 
 logger = logging.getLogger("videos_gen.montage")
@@ -83,9 +83,12 @@ async def run_montage(job: MontageJob, timeline: Timeline) -> None:
 
         w, h = FORMAT_DIMS[timeline.format]
         fps = timeline.fps
+        fit = timeline.fit_mode.value
 
-        # 1) Normaliser chaque plan au même format (indispensable avant concat)
+        # 1) Normaliser chaque plan : même vidéo ET même audio (sinon l'assemblage
+        #    de sources hétérogènes casse). Le son des rushes est conservé.
         parts: list[Path] = []
+        durations: list[float] = []
         for i, clip in enumerate(timeline.clips):
             media = media_store.get(clip.media_id)
             if media is None:
@@ -95,29 +98,39 @@ async def run_montage(job: MontageJob, timeline: Timeline) -> None:
                 raise ValueError(f"Fichier manquant pour le plan {i + 1}.")
 
             part = work / f"{i:04d}.mp4"
-            fade = clip.transition == Transition.FADE
+            # Le fondu d'ouverture n'a de sens que sur le premier plan ; entre
+            # deux plans, c'est le fondu enchaîné qui s'en charge.
+            fade_in = clip.transition == Transition.FADE and i == 0
             if media.kind == MediaKind.PHOTO:
                 await ops.normalize_photo(src, part, w=w, h=h, fps=fps,
                                           duration=clip.duration,
-                                          ken_burns=clip.ken_burns, fade=fade)
+                                          ken_burns=clip.ken_burns,
+                                          fade_in=fade_in, fit=fit, text=clip.text)
             elif media.kind == MediaKind.VIDEO:
                 await ops.normalize_video(src, part, w=w, h=h, fps=fps,
                                           duration=clip.duration,
-                                          in_point=clip.in_point, fade=fade)
+                                          in_point=clip.in_point,
+                                          fade_in=fade_in, fit=fit, text=clip.text)
             else:
                 raise ValueError(f"Le plan {i + 1} n'est ni une photo ni une vidéo.")
             parts.append(part)
+            durations.append(clip.duration)
 
             job.clips_done = i + 1
             job.step = f"Plan {i + 1}/{len(timeline.clips)}"
             job.touch(); save_job(job)
 
-        # 2) Assembler
-        job.step = "Assemblage"; job.touch(); save_job(job)
+        # 2) Assembler — fondus enchaînés ou coupes franches
+        dissolve = timeline.transition_style == TransitionStyle.DISSOLVE
+        job.step = "Fondus enchaînés" if dissolve else "Assemblage"
+        job.touch(); save_job(job)
         bed = work / "bed.mp4"
-        await ops.concat(parts, bed)
+        if dissolve and len(parts) > 1:
+            await ops.concat_dissolve(parts, durations, bed, fps=fps)
+        else:
+            await ops.concat_cut(parts, bed)
 
-        # 3) Piste son : voix off + musique
+        # 3) Piste son : son d'origine + voix off + musique, normalisé
         voice_path = None
         if timeline.narration:
             job.step = "Voix off"; job.touch(); save_job(job)
@@ -130,12 +143,10 @@ async def run_montage(job: MontageJob, timeline: Timeline) -> None:
                 p = media_store.media_path(m.id, m.ext)
                 music_path = p if p.exists() else None
 
-        current = bed
-        if voice_path or music_path:
-            job.step = "Mixage audio"; job.touch(); save_job(job)
-            mixed = work / "mixed.mp4"
-            await postprocess(current, mixed, voice=voice_path, music=music_path)
-            current = mixed
+        # Toujours mixer : même sans voix ni musique, on normalise le loudness.
+        job.step = "Mixage audio"; job.touch(); save_job(job)
+        current = work / "mixed.mp4"
+        await ops.mix_tracks(bed, current, voice=voice_path, music=music_path)
 
         # 4) Filigrane (gravé dans l'image, selon le rôle)
         wm = _watermark_for(timeline)
