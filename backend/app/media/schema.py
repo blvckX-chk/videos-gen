@@ -29,6 +29,8 @@ class MediaItem(BaseModel):
     name: str
     ext: str                                   # mp4, jpg, mp3…
     url: str                                   # /media/<id>.<ext>
+    #: vignette d'aperçu : la photo elle-même, ou une image extraite de la vidéo
+    thumb_url: Optional[str] = None
     width: int = 0
     height: int = 0
     duration: Optional[float] = None           # secondes (vidéo / audio)

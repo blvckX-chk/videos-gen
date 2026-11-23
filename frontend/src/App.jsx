@@ -11,17 +11,21 @@ import IdentityStudio from "./components/IdentityStudio.jsx";
 import CopyStudio from "./components/CopyStudio.jsx";
 import ChatStudio from "./components/ChatStudio.jsx";
 import StockStudio from "./components/StockStudio.jsx";
+import MontageStudio from "./components/MontageStudio.jsx";
+import MediaLibrary from "./components/MediaLibrary.jsx";
 
 // Navigation groupée : CRÉER (le flux principal) vs OUTILS (appoints).
 const NAV = [
   { group: "Créer", items: [
     { id: "home",     label: "Accueil",        icon: "🏠" },
     { id: "chat",     label: "KORA",           icon: "💬" },
+    { id: "montage",  label: "Montage vidéo",  icon: "✂️" },
     { id: "pdf",      label: "Depuis un PDF",  icon: "📄" },
     { id: "campaign", label: "Campagne 360°",  icon: "🚀" },
   ]},
   { group: "Outils", items: [
     { id: "design",   label: "Graphic design", icon: "🎨" },
+    { id: "media",    label: "Médiathèque",    icon: "🎬" },
     { id: "stock",    label: "Stock",          icon: "🎞️" },
     { id: "audio",    label: "Audio",          icon: "🎧" },
     { id: "copy",     label: "Copywriting",    icon: "✍️" },
@@ -30,7 +34,8 @@ const NAV = [
 ];
 
 const TITLES = {
-  home: "Créer", chat: "KORA", pdf: "Vidéo depuis un PDF", campaign: "Campagne 360°",
+  home: "Créer", chat: "KORA", montage: "Montage vidéo", media: "Médiathèque",
+  pdf: "Vidéo depuis un PDF", campaign: "Campagne 360°",
   design: "Graphic design", stock: "Stock — médias libres", audio: "Audio toolkit",
   copy: "Copywriting", prompt: "Prompt → b-roll", settings: "Réglages",
 };
@@ -129,6 +134,8 @@ export default function App() {
 
           {view === "home" && <Home onPick={go} />}
           {view === "chat" && <ChatStudio seed={seed} />}
+          {view === "montage" && <MontageStudio />}
+          {view === "media" && <MediaLibrary />}
           {view === "pdf" && <IngestFlow />}
           {view === "campaign" && <CampaignStudio />}
           {view === "design" && <DesignStudio />}

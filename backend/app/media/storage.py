@@ -94,6 +94,9 @@ def delete(media_id: str) -> bool:
     p = media_path(media_id, item.ext)
     if p.exists():
         p.unlink()
+    thumb = media_dir() / f"{media_id}.thumb.jpg"
+    if thumb.exists():
+        thumb.unlink()
     return True
 
 

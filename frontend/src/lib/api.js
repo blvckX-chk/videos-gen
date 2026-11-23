@@ -211,6 +211,39 @@ export const api = {
     job: (id) => fetch(`${BASE}/design/jobs/${id}`).then(json),
   },
 
+  // Médiathèque (photos, rushes vidéo, audio)
+  media: {
+    list: (kind) =>
+      fetch(`${BASE}/media${kind ? `?kind=${kind}` : ""}`, { cache: "no-store" }).then(json),
+    get: (id) => fetch(`${BASE}/media/${id}`, { cache: "no-store" }).then(json),
+    upload: (file, name) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      if (name) fd.append("name", name);
+      return fetch(`${BASE}/media/upload`, { method: "POST", body: fd }).then(json);
+    },
+    del: (id) => fetch(`${BASE}/media/${id}`, { method: "DELETE" }).then(json),
+  },
+
+  // Montage vidéo (timelines + rendu)
+  montage: {
+    timelines: () => fetch(`${BASE}/montage/timelines`, { cache: "no-store" }).then(json),
+    saveTimeline: (timeline) =>
+      fetch(`${BASE}/montage/timelines`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(timeline),
+      }).then(json),
+    render: (payload) =>
+      fetch(`${BASE}/montage/render`, {
+        method: "POST",
+        headers: roleHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      }).then(json),
+    job: (id) => fetch(`${BASE}/montage/jobs/${id}`, { cache: "no-store" }).then(json),
+    jobs: () => fetch(`${BASE}/montage/jobs`, { cache: "no-store" }).then(json),
+  },
+
   // Banques de médias libres (Pexels / Pixabay)
   stock: {
     sources: () => fetch(`${BASE}/stock/sources`, { cache: "no-store" }).then(json),
