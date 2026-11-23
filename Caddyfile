@@ -10,7 +10,7 @@
 	encode zstd gzip
 	# Uploads volumineux (PDF, vidéos) — aligne avec nginx (50 Mo).
 	request_body {
-		max_size 50MB
+		max_size 1024MB
 	}
 	tls internal
 	reverse_proxy web:80
